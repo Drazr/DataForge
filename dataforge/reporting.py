@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def export_baseline(frame, destination):
+def export_baseline(frame, destination, replicates=None):
     """Export only development baseline rows, including missing critical facts."""
     from matplotlib.figure import Figure
     from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -15,8 +15,13 @@ def export_baseline(frame, destination):
     baseline = frame[(frame.split == "dev") & (frame.variant == "baseline")].copy()
     if baseline.empty:
         raise ValueError("Development baseline results are required")
+    if baseline.duplicated(["text_id", "replicate", "condition"]).any():
+        raise ValueError("Duplicate baseline rows; do not concatenate overlapping exports")
+    if "run_id" in baseline and baseline.run_id.nunique(dropna=False) != 1:
+        raise ValueError("Export one configuration at a time")
     summary = baseline.groupby(["condition", "noise_id", "snr_db"], dropna=False).agg(
         clips=("clip_id", "count"), texts=("text_id", "nunique"),
+        critical_clips=("fact_recovery", "count"),
         wer=("wer", "mean"), fact_recovery=("fact_recovery", "mean"),
         estoi=("estoi", "mean"), dnsmos_ovrl=("dnsmos_ovrl", "mean"),
     ).reset_index()
@@ -32,6 +37,10 @@ def export_baseline(frame, destination):
     summary.to_csv(destination / "baseline_condition_summary.csv", index=False)
     failures.to_csv(destination / "baseline_fact_failures.csv", index=False)
     baseline.to_csv(destination / "baseline_results.csv", index=False)
+    if replicates is not None:
+        from .experiment import noise_failure_evidence
+        noise_failure_evidence(baseline, replicates).to_csv(
+            destination / "noise_failure_evidence.csv", index=False)
     for metric in ("wer", "fact_recovery", "estoi", "dnsmos_ovrl"):
         fig = Figure(figsize=(8, 4))
         FigureCanvasAgg(fig)

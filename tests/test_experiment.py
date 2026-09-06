@@ -1,6 +1,7 @@
 import json
 import io
 import os
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,12 +12,36 @@ import pandas as pd
 import soundfile as sf
 
 from dataforge.experiment import (Experiment, fact_score, level, load_corpus,
-                                 mix_noise, noise_window, phone_roundtrip, request_audio)
+                                 mix_noise, noise_window, phone_roundtrip, request_audio,
+                                 active_rms, level_active, validate_challenges, save_json)
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class AudioTests(unittest.TestCase):
+    def test_added_silence_does_not_raise_active_speech_gain(self):
+        speech = 0.1 * np.sin(2 * np.pi * 440 * np.arange(8000) / 8000)
+        padded = np.concatenate([speech, np.zeros(8000)])
+        short = level_active(speech, -26)
+        long = level_active(padded, -26)
+        np.testing.assert_allclose(short, long[:8000])
+        self.assertAlmostEqual(20 * np.log10(active_rms(long)), -26)
+        with self.assertRaisesRegex(ValueError, "Silent"):
+            active_rms(np.zeros(100))
+
+    def test_noise_gain_is_identical_across_variant_durations(self):
+        source = np.random.default_rng(3).normal(0, 0.03, 16000)
+        source[8000:] *= 2
+        speech = level_active(np.sin(2 * np.pi * 440 * np.arange(8000) / 8000), -26)
+        longer = np.concatenate([speech, np.zeros(8000)])
+        reference = float(np.sqrt(np.mean(source ** 2)))
+        short_mix, _ = mix_noise(speech, source[:8000], 5,
+                                speech_reference_rms=active_rms(speech), noise_reference_rms=reference)
+        long_mix, measured = mix_noise(longer, source, 5,
+                                      speech_reference_rms=active_rms(longer), noise_reference_rms=reference)
+        np.testing.assert_allclose(short_mix, long_mix[:8000], atol=1e-7)
+        self.assertAlmostEqual(measured, 5)
+
     def test_snr_matches_target_and_does_not_clip(self):
         rng = np.random.default_rng(17)
         speech = level(rng.normal(size=16000), -30)
@@ -72,7 +97,11 @@ class AudioTests(unittest.TestCase):
     def test_cell_boundaries_are_three_blank_lines_and_compile(self):
         source = (ROOT / "colab_noise_ab.py").read_text(encoding="utf-8")
         cells = source.split("\n\n\n\n# %%")
-        self.assertEqual(len(cells), 15)
+        self.assertEqual(len(cells), 16)
+        self.assertEqual(len(re.findall(r"^# %% Cell ", source, re.M)), 16)
+        self.assertEqual(re.findall(r"^# %% Cell (\d+)", source, re.M), list(map(str, range(1, 17))))
+        for boundary in re.finditer(r"\n+# %%", source):
+            self.assertEqual(boundary.group().count("\n"), 4)
         for cell in cells:
             if not cell.startswith("# %%"):
                 cell = "# %%" + cell
@@ -147,6 +176,24 @@ class SelectionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "hash"):
                 self.exp.synthesize(item, "baseline", 0, "TEST_ONLY")
 
+    def test_finer_grid_reuses_audio_and_keeps_cumulative_budget(self):
+        buffer = io.BytesIO()
+        sf.write(buffer, 0.1 * np.sin(np.arange(24000)), 24000, format="WAV")
+        item = self.exp.corpus[0]
+        with patch("dataforge.experiment.request_audio", return_value=(buffer.getvalue(), {})) as post:
+            path, _ = self.exp.synthesize(item, "baseline", 0, "TEST_ONLY")
+            config = self.exp.config | {"snrs_db": [10, 7.5, 5, 2.5, 0]}
+            refined = Experiment(config, self.exp.corpus, self.exp.noises, self.temp.name)
+            self.assertNotEqual(self.exp.root, refined.root)
+            reused, meta = refined.synthesize(item, "baseline", 0, "TEST_ONLY")
+            self.assertEqual(path, reused)
+            self.assertTrue(meta["cached"])
+            self.assertEqual(post.call_count, 1)
+            self.assertEqual(self.exp.ledger_path, refined.ledger_path)
+            refined.config["max_request_characters"] = len(item["text"])
+            with self.assertRaisesRegex(RuntimeError, "budget"):
+                refined.synthesize(item, "baseline", 1, "TEST_ONLY")
+
     def test_scoring_pipeline_resumes_without_retranscribing(self):
         try:
             import imageio_ffmpeg
@@ -169,6 +216,93 @@ class SelectionTests(unittest.TestCase):
             self.assertEqual(asr.call_count, 3)
             self.assertEqual(post.call_count, 1)
             self.assertEqual(first.clip_id.tolist(), second.clip_id.tolist())
+
+    def test_baseline_selection_heldout_and_analysis_exports(self):
+        """Real codec/files/scoring/selection, with external inference stubbed."""
+        from dataforge.reporting import export_baseline
+        try:
+            import imageio_ffmpeg
+            os.environ["FFMPEG_BINARY"] = imageio_ffmpeg.get_ffmpeg_exe()
+        except ImportError:
+            pass
+        dev = [x for x in self.exp.corpus if x["split"] == "dev" and x["facts"]][:2]
+        heldout = [x for x in self.exp.corpus if x["split"] == "heldout" and x["facts"]][:1]
+        experiment = Experiment(self.exp.config | {"snrs_db": [5]}, dev + heldout,
+                                self.exp.noises, self.temp.name)
+        buffer = io.BytesIO()
+        t = np.arange(24000) / 24000
+        sf.write(buffer, 0.1 * np.sin(2 * np.pi * (440 * t + 100 * t*t)), 24000, format="WAV")
+
+        def transcript(path):
+            item = next(x for x in experiment.corpus if Path(path).stem.startswith(x["id"] + "_"))
+            suffix = Path(path).stem[len(item["id"]) + 1:]
+            variant = suffix.split("_", 1)[0]
+            if variant == "baseline" and not suffix.endswith("_clean"):
+                return "unintelligible"
+            return experiment.variant(item, variant)[0]
+
+        with patch("dataforge.experiment.request_audio", return_value=(buffer.getvalue(), {"client_first_chunk_s": 0.1})), \
+             patch.object(experiment, "transcribe", side_effect=transcript), \
+             patch.object(experiment, "quality", return_value={"dnsmos_sig": 3.5, "dnsmos_bak": 3.5, "dnsmos_ovrl": 3.5}):
+            baseline = experiment.run("dev", ["baseline"], "TEST_ONLY")
+            export_baseline(baseline, experiment.root, replicates=2)
+            conditions = ["speech_5dB"]
+            evidence = validate_challenges(baseline, conditions, 2)
+            self.assertEqual(evidence.text_id.nunique(), 2)
+            save_json(experiment.root / "challenge.json", {"conditions": conditions})
+            experiment.run("dev", ["slow"], "TEST_ONLY")
+            selection = experiment.select(conditions, {"slow": {"facts_preserved": True, "quality_acceptable": True}})
+            self.assertEqual(selection["variant"], "slow")
+            final = experiment.run("heldout", ["baseline", "slow"], "TEST_ONLY")
+            self.assertTrue(experiment.comparisons(final, conditions).iloc[0].screen_pass)
+            exported = pd.read_csv(experiment.root / "baseline_results.csv")
+            for field in ("run_id", "replicate", "snr_db", "measured_snr_db", "wer", "fact_recovery",
+                          "estoi", "dnsmos_ovrl", "speech_level_method", "noise_kind", "audio_path"):
+                self.assertIn(field, exported.columns)
+            self.assertTrue((exported.run_id == experiment.fingerprint).all())
+            self.assertTrue((experiment.root / "noise_failure_evidence.csv").is_file())
+
+
+class ChallengeTests(unittest.TestCase):
+    def baseline(self):
+        rows = []
+        for text in ("A", "B"):
+            for rep in (0, 1):
+                for condition in ("clean", "speech_5dB"):
+                    rows.append(dict(text_id=text, replicate=rep, condition=condition,
+                                     split="dev", variant="baseline", clip_id=f"{text}_{rep}_{condition}",
+                                     audio_path="clip.wav", fact_details={
+                                         "code": {"recovered": condition == "clean", "conflict": False}}))
+        return pd.DataFrame(rows)
+
+    def test_same_fact_lost_in_both_repeats_qualifies(self):
+        evidence = validate_challenges(self.baseline(), ["speech_5dB"], 2)
+        self.assertEqual(len(evidence), 4)
+        self.assertEqual(evidence.text_id.nunique(), 2)
+
+    def test_unrelated_failures_across_repeats_do_not_qualify(self):
+        frame = self.baseline()
+        mask = (frame.condition != "clean") & ((frame.text_id == "A") == (frame.replicate == 0))
+        for i in frame[mask].index:
+            frame.at[i, "fact_details"] = {"code": {"recovered": True}}
+        with self.assertRaisesRegex(ValueError, "two texts"):
+            validate_challenges(frame, ["speech_5dB"], 2)
+
+    def test_clean_failures_cannot_be_attributed_to_noise(self):
+        frame = self.baseline()
+        for i in frame[frame.condition == "clean"].index:
+            frame.at[i, "fact_details"] = {"code": {"recovered": False}}
+        with self.assertRaisesRegex(ValueError, "matched clean"):
+            validate_challenges(frame, ["speech_5dB"], 2)
+
+    def test_missing_repeat_and_duplicate_rows_are_rejected(self):
+        frame = self.baseline()
+        with self.assertRaises(ValueError):
+            validate_challenges(frame[frame.replicate == 0], ["speech_5dB"], 2)
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            validate_challenges(pd.concat([frame, frame.iloc[:1]]), ["speech_5dB"], 2)
+        with self.assertRaises(ValueError):
+            validate_challenges(frame, ["clean"], 2)
 
 
 if __name__ == "__main__":

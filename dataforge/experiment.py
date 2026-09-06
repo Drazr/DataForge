@@ -104,6 +104,32 @@ def level(audio, target_dbfs):
     return scaled
 
 
+def active_rms(audio, sample_rate=8000):
+    """RMS of 20 ms frames within 40 dB of peak frame power; not ITU P.56.
+
+    Reject silence and exclude quiet frames so added pauses do not raise speech
+    gain. Frame parameters are fixed across variants and recorded in each run.
+    """
+    audio = np.asarray(audio, dtype=np.float64)
+    if not len(audio) or not np.isfinite(audio).all():
+        raise ValueError("Empty or invalid speech")
+    size = max(1, round(sample_rate * 0.020))
+    starts = np.arange(0, len(audio), size)
+    counts = np.minimum(size, len(audio) - starts)
+    powers = np.add.reduceat(audio ** 2, starts) / counts
+    if powers.max() < 1e-16:
+        raise ValueError("Silent speech")
+    active = powers >= powers.max() * 10 ** (-40 / 10)
+    return float(np.sqrt(np.average(powers[active], weights=counts[active])))
+
+
+def level_active(audio, target_dbfs, sample_rate=8000):
+    scaled = audio * (10 ** (target_dbfs / 20) / active_rms(audio, sample_rate))
+    if np.max(np.abs(scaled)) >= 0.99:
+        raise ValueError("Speech leveling clips; lower speech_rms_dbfs for the whole experiment")
+    return scaled
+
+
 def phone_roundtrip(audio, sample_rate):
     """One local G.711 mu-law encode/decode cycle, not a real provider call."""
     sf_buffer = io.BytesIO()
@@ -128,16 +154,56 @@ def noise_window(audio, length, offset):
     return audio[indices], offset + length > len(audio)
 
 
-def mix_noise(speech, noise, snr_db):
+def mix_noise(speech, noise, snr_db, *, speech_reference_rms=None, noise_reference_rms=None):
     if rms(speech) < 1e-8 or rms(noise) < 1e-8:
         raise ValueError("Silent speech or noise")
-    scaled_noise = noise * (rms(speech) / (rms(noise) * 10 ** (snr_db / 20)))
+    speech_reference = rms(speech) if speech_reference_rms is None else speech_reference_rms
+    noise_reference = rms(noise) if noise_reference_rms is None else noise_reference_rms
+    if not np.isfinite([speech_reference, noise_reference, snr_db]).all() or min(speech_reference, noise_reference) <= 0:
+        raise ValueError("Invalid SNR calibration")
+    scaled_noise = noise * (speech_reference / (noise_reference * 10 ** (snr_db / 20)))
     mixture = speech + scaled_noise
     # Reject instead of giving one variant a different limiter/gain policy.
     if np.max(np.abs(mixture)) >= 0.99:
         raise ValueError("Mixture would clip: lower speech_rms_dbfs globally and start a new run")
-    measured = 20 * np.log10(rms(speech) / rms(scaled_noise))
+    measured = 20 * np.log10(speech_reference / rms(scaled_noise))
     return mixture.astype(np.float32), float(measured)
+
+
+def noise_failure_evidence(frame, replicates):
+    """Same fact lost in noise but recovered cleanly, for every repeat of a text."""
+    base = frame[(frame.split == "dev") & (frame.variant == "baseline")]
+    keys = ["text_id", "replicate"]
+    if base.duplicated(keys + ["condition"]).any():
+        raise ValueError("Duplicate baseline rows")
+    clean = base[base.condition == "clean"]
+    noisy = base[base.condition != "clean"]
+    pairs = noisy.merge(clean, on=keys, suffixes=("_noisy", "_clean"), validate="many_to_one")
+    records = []
+    for pair in pairs.to_dict("records"):
+        for fact_id, detail in pair["fact_details_noisy"].items():
+            if not detail["recovered"] and pair["fact_details_clean"].get(fact_id, {}).get("recovered"):
+                records.append({"text_id": pair["text_id"], "replicate": pair["replicate"],
+                                "condition": pair["condition_noisy"], "fact_id": fact_id,
+                                "clean_clip_id": pair["clip_id_clean"], "noisy_clip_id": pair["clip_id_noisy"],
+                                "clean_audio_path": pair["audio_path_clean"], "audio_path": pair["audio_path_noisy"]})
+    result = pd.DataFrame(records, columns=["text_id", "replicate", "condition", "fact_id",
+                                           "clean_clip_id", "noisy_clip_id", "clean_audio_path", "audio_path"])
+    if result.empty:
+        return result
+    expected = set(range(replicates))
+    return result.groupby(["text_id", "condition", "fact_id"]).filter(
+        lambda group: set(group.replicate) == expected).reset_index(drop=True)
+
+
+def validate_challenges(frame, conditions, replicates):
+    if not 1 <= len(conditions) <= 2 or len(set(conditions)) != len(conditions) or "clean" in conditions:
+        raise ValueError("Choose one or two unique noisy development conditions")
+    evidence = noise_failure_evidence(frame, replicates)
+    for condition in conditions:
+        if evidence[evidence.condition == condition].text_id.nunique() < 2:
+            raise ValueError("Each challenge needs two texts with the same fact lost in every repeat, recovered in the matched clean clips")
+    return evidence[evidence.condition.isin(conditions)]
 
 
 def validate_catalog(config):
@@ -188,19 +254,31 @@ class Experiment:
             audio, _ = audio_read(entry["path"], 8000)
             if rms(audio) < 1e-8:
                 raise ValueError("Silent noise file")
-            self.noises.append({**entry, "sha256": file_hash(entry["path"]), "samples": audio})
+            if not 0 <= entry["offset_s"] * 8000 < len(audio):
+                raise ValueError("Noise offset is outside the source clip")
+            self.noises.append({**entry, "sha256": file_hash(entry["path"]), "samples": audio,
+                                "reference_rms": rms(audio)})
         if len({n["id"] for n in noises}) != len(noises) or len(noises) < 2:
             raise ValueError("Provide at least two uniquely named noise sources")
         if config["model_id"] != "coda" or config["phone_sample_rate"] != 8000:
             raise ValueError("This experiment pins Coda and a simulated 8 kHz PCMU path")
+        self.level_method = "20ms_frames_within_40dB_of_peak_power_v1"
         manifest = {"config": config, "corpus": corpus, "implementation_sha256": file_hash(__file__),
+                    "speech_level_method": self.level_method,
+                    "snr_definition": "active speech RMS / full noise source RMS; fixed noise gain across durations",
                     "noise": [{k: v for k, v in n.items() if k != "samples"} for n in self.noises]}
         self.fingerprint = digest(manifest)
         self.root = Path(output) / self.fingerprint[:16]
         self.root.mkdir(parents=True, exist_ok=True)
         save_json(self.root / "manifest.json", manifest)
-        self.audio_cache = self.root / "synthesis"
-        self.audio_cache.mkdir(exist_ok=True)
+        # Shared across evaluation grids; payload+replicate still determines each WAV.
+        synthesis_scope = {k: config[k] for k in ("endpoint", "model_id", "speaker", "language", "sample_rate")}
+        synthesis_scope["protocol"] = "rime_wav_v1"
+        self.audio_cache = Path(output) / "synthesis_cache" / digest(synthesis_scope)[:16]
+        self.audio_cache.mkdir(parents=True, exist_ok=True)
+        self.ledger_path = self.audio_cache / "request_ledger.json"
+        save_json(self.root / "synthesis_cache.json", {"path": str(self.audio_cache), "scope": synthesis_scope,
+                                                     "ledger_path": str(self.ledger_path)})
         self._asr = None
         self._dnsmos = None
 
@@ -226,12 +304,13 @@ class Experiment:
             return path, {**meta, "cached": True}
         if len(text) > 1000:
             raise ValueError("Rime request exceeds 1,000 characters")
-        ledger_path = self.root / "request_ledger.json"
+        ledger_path = self.ledger_path
         ledger = json.loads(ledger_path.read_text()) if ledger_path.exists() else []
         used = sum(x["characters"] for x in ledger)
         if used + len(text) > self.config["max_request_characters"]:
             raise RuntimeError("Character budget reached; review request_ledger.json before increasing it")
-        ledger.append({"cache_id": cache_id, "characters": len(text), "attempt_utc": datetime.now(timezone.utc).isoformat()})
+        ledger.append({"cache_id": cache_id, "run_id": self.fingerprint, "characters": len(text),
+                       "attempt_utc": datetime.now(timezone.utc).isoformat()})
         save_json(ledger_path, ledger)
         data, metrics = request_audio(key, payload, self.config["endpoint"])
         if not data.startswith(b"RIFF"):
@@ -294,7 +373,7 @@ class Experiment:
         for index, (item, variant, rep) in enumerate(jobs):
             original, synth = self.synthesize(item, variant, rep, key)
             speech, sr = audio_read(original)
-            phone = level(phone_roundtrip(speech, sr), self.config["speech_rms_dbfs"])
+            phone = level_active(phone_roundtrip(speech, sr), self.config["speech_rms_dbfs"])
             cases = [("clean", None, None)] + [(n["id"], snr, n) for n in self.noises for snr in self.config["snrs_db"]]
             for noise_id, snr, noise in cases:
                 condition = "clean" if snr is None else f"{noise_id}_{snr}dB"
@@ -309,18 +388,25 @@ class Experiment:
                 mixture, measured, looped = phone, None, False
                 if noise is not None:
                     segment, looped = noise_window(noise["samples"], len(phone), int(noise["offset_s"] * 8000))
-                    mixture, measured = mix_noise(phone, segment, snr)
+                    mixture, measured = mix_noise(phone, segment, snr,
+                                                 speech_reference_rms=active_rms(phone),
+                                                 noise_reference_rms=noise["reference_rms"])
                 path = self.root / "clips" / f"{clip_id}.wav"
                 path.parent.mkdir(exist_ok=True)
                 sf.write(path, mixture, 8000, subtype="FLOAT")
                 transcript = self.transcribe(path)
                 text, speed = self.variant(item, variant)
                 facts, details = fact_score(transcript, item["facts"])
-                result = {"clip_id": clip_id, "text_id": item["id"], "split": split, "variant": variant,
+                result = {"run_id": self.fingerprint, "clip_id": clip_id, "text_id": item["id"], "split": split, "variant": variant,
                           "replicate": rep, "condition": condition, "noise_id": noise_id, "snr_db": snr,
                           "measured_snr_db": measured, "noise_file": noise["path"] if noise else None,
                           "noise_sha256": noise["sha256"] if noise else None,
                           "noise_offset_s": noise["offset_s"] if noise else None, "noise_looped": looped,
+                          "noise_kind": noise.get("kind", noise_id) if noise else "clean",
+                          "noise_reference_rms": noise["reference_rms"] if noise else None,
+                          "speech_level_method": self.level_method, "sample_rate": 8000,
+                          "speech_active_rms_dbfs": 20 * math.log10(active_rms(phone)),
+                          "snr_definition": "active speech / full source noise RMS; fixed gain",
                           "reference_text": text, "transcript": transcript,
                           "wer": float(wer(normalize(text), normalize(transcript))),
                           "fact_recovery": facts, "fact_details": details, "fact_count": len(item["facts"]),
@@ -379,13 +465,7 @@ class Experiment:
         if conditions != challenge["conditions"]:
             raise ValueError("Selection must use the previously frozen baseline challenge")
         dev = self.all_results("dev")
-        if not conditions or "clean" in conditions:
-            raise ValueError("Choose noisy development failure conditions")
-        baseline = dev[(dev.variant == "baseline") & dev.condition.isin(conditions)]
-        for condition in conditions:
-            failures = baseline[(baseline.condition == condition) & (baseline.fact_recovery < 1)]
-            if failures.text_id.nunique() < 2 or failures.replicate.nunique() < self.config["replicates"]:
-                raise ValueError("Each challenge condition must fail on at least two development texts")
+        validate_challenges(dev, conditions, self.config["replicates"])
         table = self.comparisons(dev, conditions)
         table.to_csv(self.root / "development_comparisons.csv", index=False)
         passing = table[table.screen_pass].sort_values(["fact_gain", "wer_delta"], ascending=[False, True])

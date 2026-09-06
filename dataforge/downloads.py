@@ -78,7 +78,8 @@ def prepare_models(config, model_directory):
     lock_path = root / "model_lock.json"
     lock = json.loads(lock_path.read_text()) if lock_path.exists() else {}
     request_id = f"{config['asr_repo']}@{config['asr_revision']}"
-    if lock and lock["asr_requested"] != request_id:
+    resolved_id = lock.get("asr_requested", "").rsplit("@", 1)[0] + "@" + str(lock.get("asr_revision"))
+    if lock and request_id not in {lock["asr_requested"], resolved_id}:
         raise ValueError("Model lock differs from configuration; use another model directory")
     if not lock:
         revision = HfApi().model_info(config["asr_repo"], revision=config["asr_revision"]).sha
