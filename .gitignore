@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+data/
+outputs/
+models/
+*.wav
+*.pcm
+*.ulaw
+*.tar.gz
+*.onnx
+*.zip
