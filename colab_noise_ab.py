@@ -41,6 +41,9 @@ from dataforge.downloads import download_musan, prepare_models
 
 RIME_API_KEY = userdata.get("RIME_API_KEY")
 config = json.loads((REPO / "experiment.json").read_text())
+# Choose these before Cell 6 freezes the run. Extra SNR points increase scoring time.
+# For a finer initial sweep, use [10, 7.5, 5, 2.5, 0]. Keep held-out texts untouched.
+config["snrs_db"] = [10, 5, 0]
 # CPU/int8 is portable. For a supported Colab GPU, set both values before models load:
 # config["asr_device"] = "cuda"
 # config["asr_compute_type"] = "float16"
@@ -65,6 +68,8 @@ print("Environmental clips:", len(noise_files), "Speech clips:", len(speech_file
 print("Inspect descriptions in these files:", list(musan.glob("noise/**/ANNOTATIONS")) + list(musan.glob("noise/**/README*")))
 print("First noise paths:", *noise_files[:10], sep="\n")
 print("Speech paths:", *speech_files, sep="\n")
+if not noise_files or not speech_files:
+    raise ValueError("No complete noise dataset found. Enable DOWNLOAD_MUSAN or place an existing MUSAN copy at the printed path: " + str(musan))
 
 
 
@@ -112,7 +117,7 @@ print("Duration:", sample_metadata["duration_s"], "seconds; raw peak:", sample_m
 
 
 
-# %% Cell 8 - Development baseline: 21 texts x 2 syntheses x 7 conditions = 294 scores.
+# %% Cell 8 - Development baseline and diagnostics (294 scores with the default grid).
 # New TTS calls are billed; completed audio and scores are cached in Drive for resumes.
 PREFLIGHT_AUDIO_VERIFIED = False  # True after the voice, words, and completion sound correct
 if not PREFLIGHT_AUDIO_VERIFIED:
@@ -121,12 +126,21 @@ baseline = experiment.run("dev", ["baseline"], RIME_API_KEY)
 display(baseline.groupby("condition")[["wer", "fact_recovery", "dnsmos_ovrl"]].mean())
 failures = baseline[(baseline.fact_count > 0) & (baseline.fact_recovery < 1)]
 display(failures[["text_id", "replicate", "condition", "reference_text", "transcript", "fact_recovery"]])
+from dataforge.reporting import export_baseline
+baseline_summary, fact_failures = export_baseline(baseline, experiment.root)
+display(baseline_summary)
+display(fact_failures)
+print("Baseline CSVs and SNR plots saved before any intervention selection:", experiment.root)
+print("Listen to clean and noisy versions of failed texts; ASR errors alone do not prove human misunderstanding.")
 
 
 
 # %% Cell 9 - Freeze one or two challenge conditions from repeatable baseline failures.
 # Enter labels shown in Cell 8, e.g. ["environment_5dB", "competing_speech_0dB"].
 CHALLENGE_CONDITIONS = []
+# If no noisy failure repeats, stop here; baseline diagnostics are already saved.
+# A finer follow-up grid belongs in a separately recorded development run (Cell 3),
+# before candidate selection. It does not establish a universal SNR threshold.
 if not CHALLENGE_CONDITIONS or len(CHALLENGE_CONDITIONS) > 2:
     raise ValueError("Choose one or two development failure conditions; if none repeat, report no demonstrated failure")
 for condition in CHALLENGE_CONDITIONS:
@@ -163,6 +177,10 @@ for variant in ("baseline", "clauses", "repeat", "slow"):
         display(Audio(filename=clips.iloc[0].audio_path))
 # Repeat with all development critical texts / challenge conditions before approval.
 # Also listen to the saved clean conditions. ASR matching alone cannot establish comprehension.
+review_columns = ["text_id", "variant", "replicate", "condition", "reference_text", "transcript", "audio_path"]
+development[(development.fact_count > 0) &
+            development.condition.isin(["clean", *CHALLENGE_CONDITIONS])][review_columns].to_csv(
+                experiment.root / "development_listening_queue.csv", index=False)
 LISTENING_REVIEW = {
     "clauses": {"facts_preserved": False, "quality_acceptable": False, "notes": ""},
     "repeat": {"facts_preserved": False, "quality_acceptable": False, "notes": ""},
@@ -212,6 +230,8 @@ save_json(experiment.root / "evidence_status.json", {
 })
 print("Saved evidence in:", experiment.root)
 print("Metric screen passed:", passed, "— verify held-out facts and naturalness before making a final claim.")
+validation[validation.fact_count > 0][review_columns].to_csv(
+    experiment.root / "heldout_listening_queue.csv", index=False)
 
 
 

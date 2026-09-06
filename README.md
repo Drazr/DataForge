@@ -6,6 +6,9 @@ harness, not a deployed telephone agent. No measured improvement is claimed yet.
 
 ## Start in Colab
 
+Use the stage-by-stage [Colab runbook](docs/COLAB_RUNBOOK.md) for manual inputs,
+resuming a session, optional finer SNR spacing, and interpreting no-winner runs.
+
 1. Open a new Colab notebook. Add `RIME_API_KEY` under the left sidebar's key icon,
    enable notebook access, and keep the key out of notebook source/output.
 2. Open [`colab_noise_ab.py`](colab_noise_ab.py). Copy each `# %%` section into its
@@ -33,6 +36,8 @@ tuning until a positive result appears.
 - `dataforge/experiment.py`: matched mixtures, synthesis cache, HTTP timing,
   ASR scoring, fact matching, DNSMOS P.835 and frozen candidate selection.
 - `dataforge/downloads.py`: safe MUSAN extraction and immutable model revisions.
+- `dataforge/reporting.py`: baseline SNR plots and per-fact failure exports, saved
+  before candidate selection so a baseline-only run still produces useful evidence.
 - `fixtures/corpus.json`: 20 general and 10 critical-information **original synthetic
   fixtures**; 14+7 development and 6+3 held-out. These are not Harvard, LibriTTS or
   SP-MCQA examples. Every critical fixture contains a name, day, time, date, amount,
