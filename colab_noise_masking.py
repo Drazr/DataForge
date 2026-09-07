@@ -29,7 +29,7 @@ if (REPO / ".git").exists():
 else:
     print("Using uploaded source archive; retain its GitHub commit separately for evidence.")
 if not (REPO / "experiment.json").is_file():
-    raise ValueError("Project files missing; clone the branch or extract the source ZIP into /content/DataForge")
+    raise ValueError("Project files missing; clone the branch or extract the source ZIP into /content/DataForge-noise")
 sys.path.insert(0, str(REPO))
 
 
