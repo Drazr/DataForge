@@ -2,6 +2,8 @@
 
 Branch: `codex/noise-masking-test`.
 
+Project scope: only **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**, in that order. Shared planning documents are [hackathon guidelines](HACKATHON_GUIDELINES.md), [implementation roadmap](rime_implementation_roadmap.md), and [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged by this test-scope decision.
+
 Copy the nine cells in [colab_noise_masking.py](colab_noise_masking.py) into Colab.
 Exactly three blank lines separate cells. The first two mount Drive and clone
 this branch. This workflow generates the baseline only: fixed speech, phone codec,

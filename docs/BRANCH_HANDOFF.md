@@ -1,5 +1,9 @@
 # Three independent workflow branches
 
+Active experiments only, in the chosen order: **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**. See the [roadmap](../rime_implementation_roadmap.md) and [testing guide](../RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged and outside this scope decision.
+
+Delivery A/B requires only Noise-Masking outputs; leave its optional Grid input unset. Grid runs last and defaults to the Noise-Masking baseline. To analyze A/B outputs instead, select the completed Delivery A/B source run, `results.csv`, and one split/variant per session. Later Grid findings do not reopen the already frozen A/B candidate or permit tuning on held-out data.
+
 | Workflow | Branch | Colab entry file |
 | --- | --- | --- |
 | Noise-Masking Test | codex/noise-masking-test | colab_noise_masking.py |
