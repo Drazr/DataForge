@@ -1,6 +1,6 @@
 # Delivery A/B in Colab
 
-Use the eleven cells in `colab_noise_ab.py` on `codex/noise-conditioned-ab`.
+Use the eleven cells in `colab_noise_ab.py` on `noise-conditioned-ab`.
 
 1. Cells 1–3 mount Drive, clone this branch into `/content/DataForge-delivery`
    and install audio dependencies. Use Python 3.11/3.12. If restarted, rerun 1–2.

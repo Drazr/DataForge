@@ -15,7 +15,7 @@ print("Persistent experiment folder:", WORK)
 
 # %% Cell 2 - Load the GitHub branch into the Colab runtime.
 # Git branches are cloned, while Drive is mounted in Cell 1.
-BRANCH = "codex/noise-conditioned-ab"
+BRANCH = "noise-conditioned-ab"
 REPO_URL = "https://github.com/Drazr/DataForge.git"
 if not REPO.exists():
     subprocess.run(["git", "clone", "--single-branch", "--branch", BRANCH, REPO_URL, str(REPO)], check=True)
