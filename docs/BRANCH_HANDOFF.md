@@ -6,9 +6,9 @@ Delivery A/B requires only Noise-Masking outputs; leave its optional Grid input 
 
 | Workflow | Branch | Colab entry file |
 | --- | --- | --- |
-| Noise-Masking Test | codex/noise-masking-test | colab_noise_masking.py |
-| Noise-Conditioned Delivery A/B | codex/noise-conditioned-ab | colab_noise_ab.py |
-| Grid and Breakpoint Analysis | codex/grid-breakpoint-analysis | colab_grid_analysis.py |
+| Noise-Masking Test | noise-masking-test | colab_noise_masking.py |
+| Noise-Conditioned Delivery A/B | noise-conditioned-ab | colab_noise_ab.py |
+| Grid and Breakpoint Analysis | grid-breakpoint-analysis | colab_grid_analysis.py |
 
 Noise Masking produces the baseline. Grid Analysis copies its tables, metadata
 and clips into its own checkout and performs CPU-only analysis. Delivery A/B

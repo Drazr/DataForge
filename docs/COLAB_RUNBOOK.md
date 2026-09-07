@@ -1,6 +1,6 @@
 # Noise-Masking Test in Colab
 
-Use the nine cells in `colab_noise_masking.py` on `codex/noise-masking-test`.
+Use the nine cells in `colab_noise_masking.py` on `noise-masking-test`.
 
 1. Cells 1–2 mount Drive and clone the branch into `/content/DataForge-noise`.
 2. Cell 3 installs dependencies and FFmpeg on Python 3.11/3.12. If a restart is
