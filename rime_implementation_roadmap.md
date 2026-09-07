@@ -4,7 +4,7 @@
 
 Proceed only with **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**, using one Colab notebook per branch. This plan supersedes the earlier broader experiment roadmap. It makes no new decision about catalog engineering methods.
 
-See [HACKATHON_GUIDELINES.md](HACKATHON_GUIDELINES.md), [RIME_TELEPHONY_TESTING_GUIDE.md](RIME_TELEPHONY_TESTING_GUIDE.md), and [branch handoffs](https://github.com/Drazr/DataForge/blob/noise-masking-test/docs/BRANCH_HANDOFF.md). Each test branch's README links its executable notebook and detailed runbook; the [main README](README.md) lists those branches.
+See [HACKATHON_GUIDELINES.md](HACKATHON_GUIDELINES.md), [RIME_TELEPHONY_TESTING_GUIDE.md](RIME_TELEPHONY_TESTING_GUIDE.md), and [branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md). Each test branch's README links its executable notebook and detailed runbook; the [main README](README.md) lists those branches.
 
 ## Phase 1 — Noise-Masking Test
 
