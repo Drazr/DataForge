@@ -13,7 +13,7 @@ imports baseline scores/audio without synthesizing or transcribing them again.
 Optional Grid Analysis conclusions are copied into `inputs/grid_analysis/`.
 New A/B and held-out results go to `MyDrive/DataForge/delivery_ab/outputs/<run-id>/`.
 
-Follow [the runbook](docs/COLAB_RUNBOOK.md) and [branch handoffs](docs/BRANCH_HANDOFF.md).
+Follow [the runbook](docs/COLAB_RUNBOOK.md) and [branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md).
 Shared audio/scoring helpers match the Noise-Masking branch. The frozen producer
 manifest supplies runtime corpus/settings; the example config and fixtures support
 shared-library tests. This branch does not perform a fresh development noise sweep.

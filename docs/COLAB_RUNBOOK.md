@@ -29,4 +29,4 @@ The imported request ledger keeps baseline costs in the cumulative character cap
 resuming must not overwrite subsequent A/B attempts. One writing notebook per cache.
 Inputs are immutable copies and outputs are stored under
 `MyDrive/DataForge/delivery_ab/outputs/<run-id>/`. Only downloaded datasets/models
-remain shared at their original paths. See [branch handoffs](BRANCH_HANDOFF.md).
+remain shared at their original paths. See [branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md).
