@@ -144,6 +144,13 @@ independent recordings (`EXTRA_NOISES`), chosen before scoring. The shipped
 
 For analysis without API calls or a GPU, see the
 [Grid and Breakpoint input mapping](docs/GRID_ANALYSIS_INPUTS.md).
+The [Grid Analysis runbook](docs/GRID_ANALYSIS_RUNBOOK.md) and
+[`colab_grid_analysis.py`](colab_grid_analysis.py) provide seven copy-paste Colab
+cells for paired adjacent-SNR analysis. This workflow excludes DNSMOS and leaves
+absolute acceptance limits configurable in `grid_analysis.json`.
+Point it at the same Noise-Conditioned Delivery A/B run folder as soon as Cell 9
+exports the baseline; an A/B winner and the later `results.csv` are not required.
+Existing baseline summaries/plots and fact-loss evidence are reused.
 
 ## Local validation and streaming
 

@@ -227,7 +227,7 @@ class SelectionTests(unittest.TestCase):
             pass
         dev = [x for x in self.exp.corpus if x["split"] == "dev" and x["facts"]][:2]
         heldout = [x for x in self.exp.corpus if x["split"] == "heldout" and x["facts"]][:1]
-        experiment = Experiment(self.exp.config | {"snrs_db": [5]}, dev + heldout,
+        experiment = Experiment(self.exp.config | {"snrs_db": [10, 5]}, dev + heldout,
                                 self.exp.noises, self.temp.name)
         buffer = io.BytesIO()
         t = np.arange(24000) / 24000
@@ -261,6 +261,20 @@ class SelectionTests(unittest.TestCase):
                 self.assertIn(field, exported.columns)
             self.assertTrue((exported.run_id == experiment.fingerprint).all())
             self.assertTrue((experiment.root / "noise_failure_evidence.csv").is_file())
+            # Exercise the new consumer against actual producer schemas/serialization.
+            from dataforge.grid_analysis import run_analysis
+            save_json(experiment.root / "evidence_scope.json", {
+                "synthesis_repeats": 2, "snrs_db": [10, 5], "noise_sources": 2,
+                "texts_by_split": {"dev": len(dev), "heldout": len(heldout)},
+                "critical_texts_by_split": {"dev": len(dev), "heldout": len(heldout)},
+            })
+            settings = json.loads((ROOT / "grid_analysis.json").read_text())
+            settings["bootstrap_samples"] = 100
+            analysis = run_analysis(experiment.root, settings, experiment.root / "grid-analysis")
+            self.assertEqual(analysis["report"]["missing_rows"], 0)
+            self.assertEqual(analysis["report"]["grid_source"], "baseline_condition_summary.csv")
+            self.assertEqual(len(analysis["intervals"]), 6)
+            self.assertFalse(analysis["intervals"].supported_breakpoint.any())
 
 
 class ChallengeTests(unittest.TestCase):
