@@ -24,7 +24,7 @@ API keys, synthesis, ASR, DNSMOS, model downloads, or telephony integration.
    `inputs/noise_masking/<run-id>/` folder and creates `handoff.json` with hashes
    and audio path mappings. Small evidence files can be committed later; audio
    stays ignored by Git. The source folder is not modified.
-3. Clone `codex/grid-breakpoint-analysis` in Cell 2. Local changes must first be
+3. Clone `grid-breakpoint-analysis` in Cell 2. Local changes must first be
    committed and pushed to make them available on GitHub. Alternatively upload
    an archive of these source files into `/content/DataForge-grid` before Cell 2.
    Private repository authentication, if needed, is handled by the user; do not

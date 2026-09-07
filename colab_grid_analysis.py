@@ -19,7 +19,7 @@ print("Use a separate analysis notebook; the completed baseline is sufficient.")
 
 # %% Cell 2 - Load the analysis branch (or use an uploaded source archive).
 # The branch must be committed and pushed before cloning it from GitHub.
-BRANCH = "codex/grid-breakpoint-analysis"
+BRANCH = "grid-breakpoint-analysis"
 REPO_URL = "https://github.com/Drazr/DataForge.git"
 if not REPO.exists():
     subprocess.run(["git", "clone", "--single-branch", "--branch", BRANCH, REPO_URL, str(REPO)], check=True)
