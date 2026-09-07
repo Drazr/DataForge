@@ -1,23 +1,19 @@
-# Grid and Breakpoint Analysis
+# DataForge — Shared Project Documents
 
-Branch: `codex/grid-breakpoint-analysis`.
+The `main` branch is the single home for shared project planning:
 
-Project scope: only **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**, in that order. Shared planning documents are [hackathon guidelines](HACKATHON_GUIDELINES.md), [implementation roadmap](rime_implementation_roadmap.md), and [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged by this test-scope decision.
+- [Hackathon guidelines](HACKATHON_GUIDELINES.md)
+- [Implementation roadmap](rime_implementation_roadmap.md)
+- [Testing guide](RIME_TELEPHONY_TESTING_GUIDE.md)
 
-Copy the seven cells in [colab_grid_analysis.py](colab_grid_analysis.py) into a CPU
-Colab notebook; exactly three blank lines separate cells. Cells 1–2 mount Drive,
-clone this branch and copy a completed Noise-Masking run into this checkout's
-`inputs/noise_masking/<run-id>/` folder with hashes and audio path remapping.
+Only the following three experiments are planned, in this order. Use a separate Colab notebook and the corresponding branch for each:
 
-This branch contains only the analysis notebook, settings, analysis/handoff code,
-lightweight dependencies and their tests. It needs no synthesis, ASR or model
-inference. The existing analysis excludes DNSMOS from its breakpoint decisions.
+1. [Noise-Masking Test](https://github.com/Drazr/DataForge/tree/codex/noise-masking-test) — `colab_noise_masking.py`.
+2. [Noise-Conditioned Delivery A/B](https://github.com/Drazr/DataForge/tree/codex/noise-conditioned-ab) — `colab_noise_ab.py`.
+3. [Grid and Breakpoint Analysis](https://github.com/Drazr/DataForge/tree/codex/grid-breakpoint-analysis) — `colab_grid_analysis.py`.
 
-See [the runbook](docs/GRID_ANALYSIS_RUNBOOK.md), [input mapping](docs/GRID_ANALYSIS_INPUTS.md)
-and [branch handoffs](docs/BRANCH_HANDOFF.md). New analysis results stay in
-`MyDrive/DataForge/grid_analysis/outputs/<run-id>/<session>/results/` and can be
-copied into the Delivery A/B branch for human challenge review.
+Each test branch retains its own code, dependencies, tests, runbook and handoff instructions, and links here for shared planning. This branch contains no experiment implementation.
 
-Run `python -m unittest discover -s tests -v` after installing
-`requirements-grid.txt`. Tests use synthetic fixtures; there are no measured
-experiment outputs in this repository yet.
+Complete Noise Masking first and retain its outputs, datasets and evaluator models in Drive. Delivery A/B imports that baseline; Grid Analysis runs last and defaults to the same baseline. See the [branch handoff instructions](https://github.com/Drazr/DataForge/blob/codex/noise-masking-test/docs/BRANCH_HANDOFF.md) for required copies and optional A/B-result analysis.
+
+Catalog engineering guidance is unchanged. Actual experiments and manual listening reviews remain pending; software tests are not experimental evidence.

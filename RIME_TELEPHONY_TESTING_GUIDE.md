@@ -4,7 +4,7 @@
 
 The active order is **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**, in three separate Colab notebooks. This guide supersedes the earlier six-test plan. Catalog engineering methods are outside this scope update and remain unchanged.
 
-Use the [implementation roadmap](rime_implementation_roadmap.md), branch README/runbook, and [handoff instructions](docs/BRANCH_HANDOFF.md) for setup and file locations.
+Use the [implementation roadmap](rime_implementation_roadmap.md), each test branch's README/runbook, and [handoff instructions](https://github.com/Drazr/DataForge/blob/codex/noise-masking-test/docs/BRANCH_HANDOFF.md) for setup and file locations. The [main README](README.md) links all three test branches.
 
 ## Shared controls
 
