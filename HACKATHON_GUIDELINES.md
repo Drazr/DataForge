@@ -13,7 +13,7 @@
 
 - **Working repository:** judges may ask for reproduction.
 - **README:** setup, architecture, third parties, known limitations, failure behavior, and exact Rime model ID, speaker, language, endpoint, format and transport.
-- **`RIME_EVIDENCE.md`:** hard voice claim, acceptance test, exact procedure, results, saved clips/fixtures, limitations and a repeatable command.
+- **[RIME_EVIDENCE.md on noise-conditioned-ab](https://github.com/Drazr/DataForge/blob/noise-conditioned-ab/RIME_EVIDENCE.md):** hard voice claim, acceptance test, exact procedure, results, saved clips/fixtures, limitations and a repeatable command.
 - **4–5 minute demo:** user need, normal flow, deliberate stress/failure case, measured result, and active Rime provider.
 - **Environment example:** placeholders only; it must pass secret/config preflight.
 

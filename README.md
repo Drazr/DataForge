@@ -1,6 +1,6 @@
 # DataForge — Shared Project Documents
 
-The `main` branch is the single home for shared project planning:
+The `main` branch is the repository default and the single home for shared project planning:
 
 - [Hackathon guidelines](HACKATHON_GUIDELINES.md)
 - [Implementation roadmap](rime_implementation_roadmap.md)

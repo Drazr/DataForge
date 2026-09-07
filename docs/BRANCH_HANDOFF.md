@@ -1,5 +1,22 @@
 # Three independent workflow branches
 
+## Current repository layout
+
+`main` is the default branch. It owns `HACKATHON_GUIDELINES.md`,
+`rime_implementation_roadmap.md`, `RIME_TELEPHONY_TESTING_GUIDE.md` and this
+`docs/BRANCH_HANDOFF.md` guide. Test branches link to these shared documents;
+their notebook scripts, dependencies, tests and workflow-specific runbooks remain
+on their respective branches. `RIME_EVIDENCE.md` belongs to `noise-conditioned-ab`.
+
+The three test branches no longer have a prefix; use the exact names below.
+For an existing Colab notebook, copy the latest cells from the matching branch.
+Before starting a new run, use a fresh runtime so Cell 2 clones the current branch
+and commit; existing checkouts are intentionally not updated automatically.
+Preserve all Drive results, datasets, models and synthesis caches. Do not switch
+code revisions during a frozen run without checking producer/consumer compatibility.
+
+## Execution and evidence transfer
+
 Active experiments only, in the chosen order: **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**. See the shared documents on `main`: the [roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md) and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged and outside this scope decision.
 
 Delivery A/B requires only Noise-Masking outputs; leave its optional Grid input unset. Grid runs last and defaults to the Noise-Masking baseline. To analyze A/B outputs instead, select the completed Delivery A/B source run, `results.csv`, and one split/variant per session. Later Grid findings do not reopen the already frozen A/B candidate or permit tuning on held-out data.
