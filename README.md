@@ -21,3 +21,7 @@ shared-library tests. This branch does not perform a fresh development noise swe
 No measured results are included. Local checks: `python -m unittest discover -s tests -v`
 after installing `requirements-colab.txt` and FFmpeg. Human listening and a real
 Colab execution remain necessary.
+
+Session problems, fixes and the current baseline eligibility decision are tracked
+in [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Saved-baseline review belongs to
+Noise-Masking Cell 10; there is no separate Colab review script in this branch.

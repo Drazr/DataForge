@@ -3,7 +3,8 @@
 Use the eleven cells in `colab_noise_ab.py` on `noise-conditioned-ab`.
 
 1. Cells 1–3 mount Drive, clone this branch into `/content/DataForge-delivery`
-   and install audio dependencies. Use Python 3.11/3.12. If restarted, rerun 1–2.
+   and install audio dependencies. Use Python 3.11/3.12/3.13. Restart after
+   installation, rerun 1–2, skip Cell 3, and continue at Cell 4.
 2. Cell 4: set `SOURCE_NOISE_RUN` to the completed Noise-Masking run. The handoff
    copies tables, manifest, scored JSON rows, clips and cached speech into this
    checkout's `inputs/`. Leave `GRID_RESULTS = None` for the chosen order because

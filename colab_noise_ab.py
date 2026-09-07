@@ -34,13 +34,29 @@ sys.path.insert(0, str(REPO))
 
 
 
-# %% Cell 3 - Install dependencies. Use a fresh runtime if Colab asks for a restart.
-if sys.version_info[:2] not in {(3, 11), (3, 12)}:
-    raise RuntimeError("These dependency pins target Python 3.11/3.12; choose a compatible Colab runtime before installing")
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(REPO / "requirements-colab.txt")], check=True)
+# %% Cell 3 - Install dependencies for Python 3.11, 3.12 or 3.13.
+if sys.version_info[:2] not in {(3, 11), (3, 12), (3, 13)}:
+    raise RuntimeError("Use Python 3.11, 3.12 or 3.13 for this workflow")
+requirements = (REPO / "requirements-colab.txt").read_text()
+if sys.version_info[:2] == (3, 13):
+    replacements = {
+        "numpy": "numpy>=2.2,<3", "scipy": "scipy>=1.15,<2",
+        "pandas": "pandas>=2.2.3,<3", "matplotlib": "matplotlib>=3.10,<4",
+        "faster-whisper": "faster-whisper>=1.2.1,<2",
+        "librosa": "librosa>=0.11,<1", "onnxruntime": "onnxruntime>=1.22.1,<2",
+    }
+    requirements = "\n".join(
+        replacements.get(line.split("==", 1)[0].strip(), line)
+        for line in requirements.splitlines()
+    ) + "\nnumba>=0.61.2\nctranslate2>=4.6,<5\n"
+runtime_requirements = REPO / "requirements-colab-runtime.txt"
+runtime_requirements.write_text(requirements + "\n")
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--prefer-binary",
+                "-r", str(runtime_requirements)], check=True)
 subprocess.run(["apt-get", "-qq", "update"], check=True)
 subprocess.run(["apt-get", "-qq", "install", "-y", "ffmpeg"], check=True)
-print("Dependencies installed. If a runtime restart is requested, restart and rerun Cells 1–2, then continue at Cell 4.")
+print("Restart the Colab session after installation to unload old packages. "
+      "Then rerun Cells 1-2 and continue at Cell 4; skip Cell 3.")
 
 
 
