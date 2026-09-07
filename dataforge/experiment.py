@@ -48,11 +48,21 @@ def contains(text, phrase):
     return f" {normalize(phrase)} " in f" {normalize(text)} "
 
 
+def canonicalize_time(text):
+    """Equate numeric clock formatting only when an explicit AM/PM is present."""
+    pattern = (r"(?<![\w:.\-])(?P<hour>1[0-2]|0?[1-9])[:.\-]?\s*"
+               r"(?P<minute>[0-5][0-9])\s*(?P<period>[ap])\.?\s*m\.?(?!\w)")
+    return re.sub(pattern, lambda m: f"{int(m['hour'])}:{m['minute']} {m['period'].lower()}m",
+                  text, flags=re.IGNORECASE)
+
+
 def fact_score(transcript, facts):
     details = {}
     for fact in facts:
-        found = any(contains(transcript, alias) for alias in fact["aliases"])
-        conflict = any(contains(transcript, phrase) for phrase in fact.get("forbidden", []))
+        match_text = canonicalize_time(transcript) if fact["id"] == "time" else transcript
+        match_phrase = canonicalize_time if fact["id"] == "time" else lambda value: value
+        found = any(contains(match_text, match_phrase(alias)) for alias in fact["aliases"])
+        conflict = any(contains(match_text, match_phrase(phrase)) for phrase in fact.get("forbidden", []))
         # A correct negative phrase beside its affirmative counterpart is not recovery.
         if fact.get("negative_proposition"):
             words = normalize(transcript)

@@ -34,13 +34,29 @@ sys.path.insert(0, str(REPO))
 
 
 
-# %% Cell 3 - Install dependencies. Use a fresh runtime if Colab asks for a restart.
-if sys.version_info[:2] not in {(3, 11), (3, 12)}:
-    raise RuntimeError("These dependency pins target Python 3.11/3.12; choose a compatible Colab runtime before installing")
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(REPO / "requirements-colab.txt")], check=True)
+# %% Cell 3 - Install dependencies for Python 3.11, 3.12 or 3.13.
+if sys.version_info[:2] not in {(3, 11), (3, 12), (3, 13)}:
+    raise RuntimeError("Use Python 3.11, 3.12 or 3.13 for this workflow")
+requirements = (REPO / "requirements-colab.txt").read_text()
+if sys.version_info[:2] == (3, 13):
+    replacements = {
+        "numpy": "numpy>=2.2,<3", "scipy": "scipy>=1.15,<2",
+        "pandas": "pandas>=2.2.3,<3", "matplotlib": "matplotlib>=3.10,<4",
+        "faster-whisper": "faster-whisper>=1.2.1,<2",
+        "librosa": "librosa>=0.11,<1", "onnxruntime": "onnxruntime>=1.22.1,<2",
+    }
+    requirements = "\n".join(
+        replacements.get(line.split("==", 1)[0].strip(), line)
+        for line in requirements.splitlines()
+    ) + "\nnumba>=0.61.2\nctranslate2>=4.6,<5\n"
+runtime_requirements = REPO / "requirements-colab-runtime.txt"
+runtime_requirements.write_text(requirements + "\n")
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--prefer-binary",
+                "-r", str(runtime_requirements)], check=True)
 subprocess.run(["apt-get", "-qq", "update"], check=True)
 subprocess.run(["apt-get", "-qq", "install", "-y", "ffmpeg"], check=True)
-print("Dependencies installed. If a runtime restart is requested, restart and rerun Cells 1–2, then continue at Cell 4.")
+print("Restart the Colab session after installation to unload old packages. "
+      "Then rerun Cells 1-2 and continue at Cell 4; skip Cell 3.")
 
 
 
@@ -89,16 +105,36 @@ if not noise_files or not speech_files:
 
 
 
-# %% Cell 6 - Choose and listen to two noise files before approving their labels.
-# Replace paths with real selections from Cell 5; read MUSAN source metadata.
-NOISE_PATH = ""  # a traffic or machinery WAV selected from MUSAN
-SPEECH_PATH = ""  # one competing-speaker WAV; do not label one speaker as babble
-NOISE_OFFSET_S = 0
-SPEECH_OFFSET_S = 0
-if not NOISE_PATH or not SPEECH_PATH:
-    raise ValueError("Choose NOISE_PATH and SPEECH_PATH from the downloaded files, then rerun this cell")
-for selected in (NOISE_PATH, SPEECH_PATH):
+# %% Cell 6 - Select and listen to noise candidates before verifying labels.
+import re
+descriptions = {}
+for metadata in sorted(musan.glob("noise/**/ANNOTATIONS")):
+    for line in metadata.read_text(errors="replace").splitlines():
+        match = re.search(r"noise-[\w-]+", line)
+        if match:
+            descriptions[match.group(0).removesuffix(".wav")] = line.strip()
+keywords = re.compile(
+    r"\b(traffic|trucks?|engines?|machinery|motor|tractor|construction|highway|motorway)\b",
+    re.IGNORECASE,
+)
+candidates = [path for path in noise_files if keywords.search(descriptions.get(path.stem, ""))]
+# Change these indices and rerun to audition other recordings.
+NOISE_INDEX, SPEECH_INDEX = 0, 0
+if not noise_files or not speech_files:
+    raise ValueError("Run Cell 5 to download or locate MUSAN first")
+NOISE_PATH = str((candidates or noise_files)[NOISE_INDEX])
+SPEECH_PATH = str(speech_files[SPEECH_INDEX])
+NOISE_OFFSET_S, SPEECH_OFFSET_S = 0, 0
+NOISE_LABELS_VERIFIED = False
+print("Traffic/machinery metadata matches:", len(candidates))
+if not candidates:
+    print("No metadata match: identify the selected noise manually before approving it.")
+for label, selected in (("Environmental candidate", NOISE_PATH), ("Competing speech", SPEECH_PATH)):
+    print(label, selected)
+    print("Metadata:", descriptions.get(Path(selected).stem, "Not indexed here"))
     display(Audio(filename=selected))
+print("Verify traffic/machinery and a competing speaker by listening and reading metadata, "
+      "then set NOISE_LABELS_VERIFIED=True in Cell 7.")
 
 
 
@@ -179,3 +215,157 @@ recurrent = noise_failure_evidence(baseline, config["replicates"])
 print("Texts with the same fact recovered cleanly but lost in noise in every repeat:")
 display(recurrent.groupby("condition").text_id.nunique().rename("recurrent_texts"))
 print("Noise-Masking Test complete. Copy this run folder into the Grid or Delivery branch using its handoff cell.")
+
+
+
+# %% Cell 10 - Review and rescore saved facts without new synthesis or ASR.
+from pathlib import Path
+import hashlib
+import json
+import zipfile
+
+import pandas as pd
+from google.colab import files
+from IPython.display import Audio, display
+from dataforge.experiment import noise_failure_evidence, fact_score
+import re
+import copy
+
+SOURCE_RUN = Path(globals().get("BASELINE_REVIEW_SOURCE",
+    "/content/drive/MyDrive/DataForge/noise_masking/outputs/1f95820a36625efe"))
+# For a different run, set BASELINE_REVIEW_SOURCE before executing this cell.
+manifest_path = SOURCE_RUN / "manifest.json"
+manifest = json.loads(manifest_path.read_text())
+run_id = hashlib.sha256(json.dumps(manifest, sort_keys=True).encode()).hexdigest()
+records = [json.loads(path.read_text()) for path in sorted((SOURCE_RUN / "rows").glob("*.json"))]
+records = [row for row in records if row["split"] == "dev" and row["variant"] == "baseline"]
+baseline_review = pd.DataFrame(records)
+conditions = ["clean"] + [
+    f"{noise['id']}_{snr}dB"
+    for noise in manifest["noise"] for snr in manifest["config"]["snrs_db"]
+]
+expected = {
+    (item["id"], rep, condition)
+    for item in manifest["corpus"] if item["split"] == "dev"
+    for rep in range(manifest["config"]["replicates"])
+    for condition in conditions
+}
+actual = [(row["text_id"], row["replicate"], row["condition"]) for row in records]
+if (not records or len(actual) != len(set(actual)) or set(actual) != expected
+        or any(row["run_id"] != run_id for row in records)):
+    raise ValueError("Baseline is incomplete or does not match its frozen manifest.")
+
+recurrent_review = noise_failure_evidence(baseline_review, manifest["config"]["replicates"])
+counts = recurrent_review.groupby("condition").text_id.nunique().reindex(
+    conditions[1:], fill_value=0
+).rename("recurrent_texts")
+eligible = counts[counts >= 2].index.tolist()
+print(f"Verified {len(records)} baseline scores.")
+display(counts.to_frame())
+print("A/B-eligible conditions:", eligible or "None: each needs at least two recurrent texts.")
+
+
+# This helper is identical to the updated scorer. Keeping it here also supports
+# an existing Colab session that still has the original scoring module loaded.
+def canonicalize_time(text):
+    """Equate numeric clock formatting only when an explicit AM/PM is present."""
+    pattern = (r"(?<![\w:.\-])(?P<hour>1[0-2]|0?[1-9])[:.\-]?\s*"
+               r"(?P<minute>[0-5][0-9])\s*(?P<period>[ap])\.?\s*m\.?(?!\w)")
+    return re.sub(pattern, lambda m: f"{int(m['hour'])}:{m['minute']} {m['period'].lower()}m",
+                  text, flags=re.IGNORECASE)
+
+rescored_records = copy.deepcopy(records)
+facts_by_text = {item["id"]: item["facts"] for item in manifest["corpus"] if item["split"] == "dev"}
+for row in rescored_records:
+    details = {}
+    for fact in facts_by_text[row["text_id"]]:
+        prepared_fact = dict(fact)
+        transcript = row["transcript"]
+        if fact["id"] == "time":
+            transcript = canonicalize_time(transcript)
+            for key in ("aliases", "forbidden"):
+                if key in fact:
+                    prepared_fact[key] = [canonicalize_time(value) for value in fact[key]]
+        _, scored = fact_score(transcript, [prepared_fact])
+        details.update(scored)
+    row["fact_details"] = details
+    row["facts_recovered"] = sum(detail["recovered"] for detail in details.values())
+    row["fact_recovery"] = row["facts_recovered"] / len(details) if details else None
+    row["fact_scoring_revision"] = "time_format_v2"
+rescored_frame = pd.DataFrame(rescored_records)
+rescored_recurrent = noise_failure_evidence(rescored_frame, manifest["config"]["replicates"])
+rescored_counts = rescored_recurrent.groupby("condition").text_id.nunique().reindex(
+    conditions[1:], fill_value=0
+).rename("rescored_recurrent_texts")
+rescored_eligible = rescored_counts[rescored_counts >= 2].index.tolist()
+changes = [
+    {"clip_id": before["clip_id"], "fact_id": fact_id,
+     "before": detail["recovered"], "after": after["fact_details"][fact_id]["recovered"],
+     "transcript": before["transcript"]}
+    for before, after in zip(records, rescored_records)
+    for fact_id, detail in before["fact_details"].items()
+    if detail != after["fact_details"][fact_id]
+]
+review_summary = {
+    "source_run_id": run_id, "fact_scoring_revision": "time_format_v2",
+    "scores": len(records), "changed_fact_decisions": len(changes),
+    "eligible_conditions": rescored_eligible, "minimum_recurrent_texts": 2,
+    "human_listening_review": "pending", "new_tts_calls": 0, "new_asr_calls": 0,
+    "scope": "Derived fact-score review; original run, WER, ESTOI and DNSMOS unchanged. "
+             "Not an A/B handoff run. Versioned migration is required before importing corrected scores.",
+}
+review_dir = SOURCE_RUN.parent / "reviews" / SOURCE_RUN.name / "time_format_v2"
+review_dir.mkdir(parents=True, exist_ok=True)
+(review_dir / "review_summary.json").write_text(json.dumps(review_summary, indent=2))
+(review_dir / "rescored_rows.json").write_text(json.dumps(rescored_records, indent=2))
+rescored_frame.to_csv(review_dir / "rescored_baseline_results.csv", index=False)
+rescored_recurrent.to_csv(review_dir / "rescored_recurrence.csv", index=False)
+pd.DataFrame(changes, columns=["clip_id", "fact_id", "before", "after", "transcript"]).to_csv(
+    review_dir / "changed_fact_decisions.csv", index=False)
+print("Time-format corrections:", len(changes))
+display(pd.concat([counts, rescored_counts], axis=1))
+print("Rescored A/B-eligible conditions:", rescored_eligible or "None; do not start A/B yet.")
+print("Separate review reports:", review_dir)
+
+# Include full, untruncated transcripts and all critical baseline audio for review.
+critical = baseline_review[baseline_review.fact_count > 0].copy()
+critical["bundle_audio_path"] = critical.clip_id.map(lambda value: f"clips/{value}.wav")
+archive = Path(globals().get("BASELINE_REVIEW_EXPORT_DIR", "/content")) / f"baseline_review_{run_id[:16]}_time_v2.zip"
+with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+    for report_path in sorted(review_dir.iterdir()):
+        if report_path.is_file():
+            bundle.write(report_path, "review/" + report_path.name)
+    bundle.write(manifest_path, "manifest.json")
+    bundle.writestr("baseline_rows.json", json.dumps(records, indent=2))
+    bundle.writestr("noise_failure_evidence.csv", recurrent_review.to_csv(index=False))
+    bundle.writestr("recurrence_counts.csv", counts.to_csv())
+    bundle.writestr("listening_queue.csv", critical.to_csv(index=False))
+    bundle.writestr("eligibility.json", json.dumps({
+        "run_id": run_id, "scores": len(records), "minimum_recurrent_texts": 2,
+        "eligible_conditions": eligible, "human_listening_review": "pending",
+    }, indent=2))
+    for name in ("baseline_results.csv", "baseline_condition_summary.csv",
+                 "baseline_fact_failures.csv", "evidence_scope.json",
+                 "runtime_preflight.json", "git-revision.txt", "pip-freeze.txt"):
+        path = SOURCE_RUN / name
+        if path.is_file():
+            bundle.write(path, name)
+    for row in critical.to_dict("records"):
+        path = SOURCE_RUN / "clips" / f"{row['clip_id']}.wav"
+        if hashlib.sha256(path.read_bytes()).hexdigest() != row["audio_sha256"]:
+            raise ValueError(f"Audio does not match the saved score: {path}")
+        bundle.write(path, row["bundle_audio_path"])
+
+# Audition the recurrent failures against their matched clean recordings.
+by_id = {row["clip_id"]: row for row in records}
+for pair in recurrent_review.drop_duplicates(["clean_clip_id", "noisy_clip_id"]).to_dict("records"):
+    print(f"\n{pair['text_id']} | repeat {pair['replicate']} | {pair['condition']}")
+    for label, clip_id in (("Clean", pair["clean_clip_id"]), ("Noisy", pair["noisy_clip_id"])):
+        row = by_id[clip_id]
+        print(label, "reference:", row["reference_text"])
+        print(label, "transcript:", row["transcript"])
+        display(Audio(filename=str(SOURCE_RUN / "clips" / f"{clip_id}.wav")))
+
+print("Review bundle:", archive)
+print("Share this ZIP for transcript/scorer review; keep the original Drive run unchanged.")
+files.download(str(archive))

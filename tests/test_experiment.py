@@ -97,9 +97,9 @@ class AudioTests(unittest.TestCase):
     def test_cell_boundaries_are_three_blank_lines_and_compile(self):
         source = (ROOT / "colab_noise_masking.py").read_text(encoding="utf-8")
         cells = source.split("\n\n\n\n# %%")
-        self.assertEqual(len(cells), 9)
-        self.assertEqual(len(re.findall(r"^# %% Cell ", source, re.M)), 9)
-        self.assertEqual(re.findall(r"^# %% Cell (\d+)", source, re.M), list(map(str, range(1, 10))))
+        self.assertEqual(len(cells), 10)
+        self.assertEqual(len(re.findall(r"^# %% Cell ", source, re.M)), 10)
+        self.assertEqual(re.findall(r"^# %% Cell (\d+)", source, re.M), list(map(str, range(1, 11))))
         for boundary in re.finditer(r"\n+# %%", source):
             self.assertEqual(boundary.group().count("\n"), 4)
         for cell in cells:

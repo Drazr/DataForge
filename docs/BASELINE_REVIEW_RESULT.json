@@ -1,0 +1,32 @@
+{
+  "source_run_id": "1f95820a36625efec6b121fa655f0249c4687f60df0a15e1810edb88d368cf42",
+  "fact_scoring_revision": "time_format_v2",
+  "scores": 294,
+  "changed_fact_decisions": 51,
+  "eligible_conditions": [],
+  "minimum_recurrent_texts": 2,
+  "human_listening_review": "pending",
+  "new_tts_calls": 0,
+  "new_asr_calls": 0,
+  "scope": "Derived fact-score review; original run, WER, ESTOI and DNSMOS unchanged. Not an A/B handoff run. Versioned migration is required before importing corrected scores.",
+  "source_zip_sha256": "47e6203f317257fd4dc8be56b51df644b8750c7afb666d624c209f7f4639a4af",
+  "original_source_unchanged_verified": true,
+  "standalone_old_runtime_matches_updated_library": true,
+  "conditions": {
+    "clean": 0.9591836734693878,
+    "competing_speech_0dB": 0.8979591836734694,
+    "competing_speech_10dB": 0.9591836734693878,
+    "competing_speech_5dB": 0.9591836734693878,
+    "environment_0dB": 0.9591836734693878,
+    "environment_10dB": 0.9591836734693878,
+    "environment_5dB": 0.9591836734693878
+  },
+  "rescored_recurrent_texts": {
+    "competing_speech_10dB": 0,
+    "competing_speech_5dB": 0,
+    "competing_speech_0dB": 0,
+    "environment_10dB": 0,
+    "environment_5dB": 0,
+    "environment_0dB": 0
+  }
+}
