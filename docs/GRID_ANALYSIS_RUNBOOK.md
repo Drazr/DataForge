@@ -7,8 +7,8 @@ API keys, synthesis, ASR, DNSMOS, model downloads, or telephony integration.
 
 ## Files and manual inputs
 
-1. Use the original run folder from **either Noise Masking or Noise-Conditioned
-   Delivery A/B**. In `colab_noise_ab.py`, finish **Cell 9** (baseline and exports);
+1. Use the original run folder from the **Noise-Masking Test**. In
+   `colab_noise_masking.py`, finish **Cell 9** (baseline and exports);
    analysis can start immediately, even if no challenge or A/B winner exists.
    Required: `baseline_results.csv` and `manifest.json`.
    When present, `evidence_scope.json` is cross-checked. Otherwise planned counts
@@ -19,8 +19,11 @@ API keys, synthesis, ASR, DNSMOS, model downloads, or telephony integration.
    `noise_failure_evidence.csv`. Missing challenge exports do not stop numerical
    analysis. Keep `clips/` with the referenced clean/noisy audio for optional listening.
    No new dataset, separate baseline run, or intervention output is needed.
-2. Open a separate analysis notebook, set `RUN_DIR` in Cell 1 to that same folder,
-   and authorize the Drive mount. You do not need to copy the evidence into Git.
+2. Open a separate analysis notebook, set `SOURCE_RUN_DIR` in Cell 1 to that folder,
+   and authorize Drive. Cell 2 copies the evidence into this branch checkout's
+   `inputs/noise_masking/<run-id>/` folder and creates `handoff.json` with hashes
+   and audio path mappings. Small evidence files can be committed later; audio
+   stays ignored by Git. The source folder is not modified.
 3. Clone `codex/grid-breakpoint-analysis` in Cell 2. Local changes must first be
    committed and pushed to make them available on GitHub. Alternatively upload
    an archive of these source files into `/content/DataForge-grid` before Cell 2.
@@ -36,7 +39,7 @@ API keys, synthesis, ASR, DNSMOS, model downloads, or telephony integration.
 
 The branch includes `requirements-grid.txt`, `grid_analysis.json`, and the
 analysis-only `dataforge/grid_analysis.py`. `dataforge.experiment` is not imported.
-The upstream noise/A/B scripts and their DNSMOS behavior are unchanged; DNSMOS
+Noise/A/B scripts live on their own branches; DNSMOS
 columns and plots are excluded from this new analysis workflow.
 
 ## Stages and interpretation
@@ -104,7 +107,7 @@ They require review in the A/B workflow, which retains its own challenge rules.
 
 ## Outputs and subsequent runs
 
-Each session is saved to `<run>/grid_analysis/<timestamp>/`. Settings and the
+Each session is saved to `MyDrive/DataForge/grid_analysis/outputs/<run-id>/<timestamp>/`. Settings and the
 source revision are saved before review; the `results/` subfolder contains:
 
 | File | Contents |
@@ -121,7 +124,7 @@ source revision are saved before review; the `results/` subfolder contains:
 
 Never concatenate `baseline_results.csv`, `dev_baseline.csv`, and `results.csv`:
 their baseline rows overlap. `results.csv` is optional and becomes available after
-`colab_noise_ab.py` Cell 15; baseline analysis never waits for it.
+the Delivery A/B notebook's Cell 11; baseline analysis never waits for it.
 To inspect the later intervention/held-out exports, choose `results.csv`
 in Cell 4 and explicitly select one `split` and `variant`. The manifest must match
 that run. Held-out and nonbaseline analyses export no challenge-selection rows.

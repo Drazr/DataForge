@@ -1,7 +1,6 @@
 # %% Cell 1 - Mount Drive and locate the completed baseline exports.
 # Copy each marked section into its own cell. Exactly three blank lines separate cells.
-# Reuse the Noise Masking or Noise-Conditioned Delivery A/B run folder directly.
-# colab_noise_ab.py Cell 9 exports everything needed; no A/B winner is required.
+# The next setup cell copies measured Noise-Masking outputs into this branch.
 from pathlib import Path
 import subprocess
 import sys
@@ -9,10 +8,11 @@ from google.colab import drive
 
 drive.mount("/content/drive")
 REPO = Path("/content/DataForge-grid")
-RUN_DIR = Path("/content/drive/MyDrive/DataForge/outputs/REPLACE_WITH_RUN_ID")
-if not RUN_DIR.is_dir():
-    raise ValueError("Set RUN_DIR to the Noise Masking or Noise-Conditioned A/B folder containing the baseline exports")
-print("Evidence folder:", RUN_DIR)
+WORK = Path("/content/drive/MyDrive/DataForge")
+SOURCE_RUN_DIR = WORK / "noise_masking/outputs/REPLACE_WITH_RUN_ID"
+if not SOURCE_RUN_DIR.is_dir():
+    raise ValueError("Set SOURCE_RUN_DIR to the completed Noise-Masking run folder")
+print("Producer evidence folder:", SOURCE_RUN_DIR)
 print("Use a separate analysis notebook; the completed baseline is sufficient.")
 
 
@@ -34,6 +34,9 @@ else:
 if not (REPO / "dataforge/grid_analysis.py").is_file():
     raise ValueError("Missing analysis files; clone the analysis branch or extract its source archive into REPO")
 sys.path.insert(0, str(REPO))
+from dataforge.handoff import copy_run, verify_handoff
+RUN_DIR = copy_run(SOURCE_RUN_DIR, REPO / "inputs/noise_masking")
+print("Copied upstream evidence into this branch:", RUN_DIR)
 
 
 
@@ -70,10 +73,11 @@ SETTINGS["acceptance"] = {
 # Change these pilot choices BEFORE reviewing evidence; zero delta is a direction
 # test, not a minimum practically important effect. See GRID_ANALYSIS_RUNBOOK.md.
 # Optional old-to-new audio-root mappings after moving the run directory:
-# SETTINGS["audio_path_remap"] = {"/old/DataForge/outputs": "/content/drive/MyDrive/DataForge/outputs"}
+# SETTINGS["audio_path_remap"] = {"/old/run": "/new/run"}
+SETTINGS["audio_path_remap"].update(json.loads((RUN_DIR / "handoff.json").read_text())["audio_path_remap"])
 validate_settings(SETTINGS)
 FROZEN_SETTINGS = copy.deepcopy(SETTINGS)
-ANALYSIS_ROOT = RUN_DIR / "grid_analysis"
+ANALYSIS_ROOT = WORK / "grid_analysis/outputs" / RUN_DIR.name
 SESSION = ANALYSIS_ROOT / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
 SESSION.mkdir(parents=True, exist_ok=False)
 write_json(SESSION / "settings_before_review.json", FROZEN_SETTINGS)
@@ -83,6 +87,7 @@ print("Saved settings:", SESSION)
 
 
 # %% Cell 5 - Verify the producer files and review the EXISTING performance grid.
+verify_handoff(RUN_DIR)
 rows, manifest, scope, missing, checks = load_evidence(RUN_DIR, FROZEN_SETTINGS)
 print("Rows:", checks["selected_rows"], "Expected:", checks["expected_rows"])
 print("Scope:", checks["scope_source"])
@@ -108,6 +113,7 @@ for warning in checks["warnings"]:
 if SETTINGS != FROZEN_SETTINGS:
     raise ValueError("Settings changed after freezing; record a new analysis session in Cell 4")
 OUTPUT = SESSION / "results"
+verify_handoff(RUN_DIR)
 analysis = run_analysis(RUN_DIR, FROZEN_SETTINGS, OUTPUT)
 display(analysis["grid"])
 display(analysis["intervals"])
