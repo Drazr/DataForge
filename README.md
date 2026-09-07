@@ -12,7 +12,7 @@ noise sweep, ASR fact/word recovery, ESTOI, DNSMOS and diagnostic exports.
 Follow [the runbook](docs/COLAB_RUNBOOK.md). Results are saved under
 `MyDrive/DataForge/noise_masking/outputs/<run-id>/`. No real results are bundled.
 
-[Branch handoffs](docs/BRANCH_HANDOFF.md) explains how Grid Analysis and Delivery
+[Branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md) explains how Grid Analysis and Delivery
 A/B copy these outputs. The audio/scoring library and corpus also carry the frozen
 intervention definitions needed by the separate A/B consumer; this notebook never
 runs or selects those interventions. Keep all three branches at compatible scoring

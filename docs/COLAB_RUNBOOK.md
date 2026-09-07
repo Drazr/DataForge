@@ -26,4 +26,4 @@ Keep the complete `noise_masking/outputs/<run-id>/` folder and its referenced
 synthesis cache. Keep downloaded datasets and evaluator models in shared Drive.
 Consumer handoff cells copy tables, metadata and audio into their branch checkouts;
 A/B additionally copies baseline JSON rows and cached speech. No new baseline run
-is required. See [branch handoffs](BRANCH_HANDOFF.md).
+is required. See [branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md).
