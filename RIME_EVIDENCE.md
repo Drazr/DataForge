@@ -1,62 +1,32 @@
-# Rime evidence — pending execution
+# Delivery A/B evidence — pending execution
 
-## Proposed claim
+## Input
 
-One fixed delivery intervention improves ASR-based critical-fact recovery under
-specified noise conditions on a simulated 8 kHz PCMU phone path. The model and
-voice are held constant. This is a hypothesis, not a measured result.
+A copied, complete Noise-Masking baseline and optional Grid Analysis conclusions.
+The frozen producer manifest supplies the scoring configuration, corpus, repeats,
+noise sources and SNR conditions. This branch imports baseline scores/audio.
 
-## Preregistered pilot acceptance test
+## Proposed claim and screening
 
-Freeze these criteria before development scoring; defaults live in `experiment.json`.
+One delivery intervention improves ASR-based critical-fact recovery under the
+selected noisy simulated phone conditions. No measured gain is claimed yet.
 
-- Demonstrate loss of the same fact in every synthesis repeat of each of at least
-  two development critical texts, with that fact recovered in the matched clean
-  clips, in each chosen condition.
-- Choose one or two noisy challenge conditions from baseline results only.
-- On matched development clips require mean critical-fact recovery gain >=0.05,
-  mean WER increase <=0.02, mean duration ratio <=1.5 and mean DNSMOS OVRL decline
-  <=0.15. Review per-condition outliers rather than hiding them in overall means.
-- Listen to matched development clips and confirm semantic equivalence, preserved
-  negation/numbers, and acceptable naturalness. Then freeze exactly one candidate.
-- Apply the same numeric criteria once on the held-out set, and manually inspect
-  those clips before final acceptance. If it fails, record no validated improvement.
-- Real-product acceptance additionally requires complete playback of all selected
-  critical facts, no missing final words, and matched baseline/variant recordings
-  through the final provider route. Record counts, failures and measured latency;
-  choose product-specific latency limits before the phone demo.
+Choose one or two development conditions where the same cleanly recovered fact
+fails in every noisy repeat on at least two texts. Compare each delivery change
+separately. The frozen defaults require at least 0.05 mean fact-recovery gain,
+at most 0.02 WER increase, at most 1.5x duration and at most 0.15 DNSMOS OVRL decline.
+Human review must approve facts, negation and naturalness before candidate selection.
 
-## Reproduction
+Run Cells 1–11 of `colab_noise_ab.py`. Freeze the candidate before running held-out
+texts and review their audio. No winner or failed validation is a valid result.
 
-Follow Cells 1–15 in `colab_noise_ab.py` in order. Record the Git revision and retain
-the run directory and shared synthesis cache under Drive. Optional Cell 16 runs real
-HTTP streaming. Locally: `python scripts/stream_probe.py --output outputs/stream-001`.
+## Evidence to retain
 
-Configuration: Coda / celeste / en / `https://users.rime.ai/v1/rime-tts`, HTTP WAV
-24 kHz -> simulated PCMU 8 kHz. The probe directly requests HTTP `audio/PCMU`, 8 kHz.
-No configured real telephony provider/region or phone recording exists yet.
+- Copied `inputs/noise_masking/<run-id>/`, its `handoff.json` and optional grid inputs.
+- `manifest.json`, `imported_baseline.json`, `evidence_scope.json` and cache ledger.
+- Challenge and selection locks; development/held-out comparison CSVs.
+- `results.csv`, audio, transcripts, per-fact details and human listening notes.
 
-## Results
-
-Status: **not run with Rime credentials or real phone transport**.
-Do not populate WER, fact gain, MOS, latency, or success rate until measured.
-
-After execution attach the following from the run directory:
-
-- `manifest.json`, `evidence_scope.json`, `runtime_preflight.json`, catalog check,
-  Git/package/FFmpeg/model revisions and shared request ledger (`synthesis_cache.json` records its path).
-- `challenge.json`, `selection.json`, `development_comparisons.csv`,
-  `heldout_comparison.csv`, `results.csv`, `condition_summary.csv` and plots.
-- Saved original/noisy audio pairs, transcripts, per-fact scoring details and human
-  listening notes. Mark exact capture point, transport and noise placement.
-- Streaming results with cached/uncached distinction and separate real phone results.
-- Any exceptions, candidate failure, unsupported language/noise/provider conditions.
-
-## Limits
-
-Thirty original synthetic texts, ten with critical facts, two selected noise files,
-two TTS replicates, one voice and one simulated codec do not establish a universal
-intelligibility threshold or automatic noise policy. ASR matching is a proxy; it can
-miss alternate valid phrasing or accept a correct phrase beside a contradiction.
-The held-out set contains only three critical texts. All numeric screening gains
-must be interpreted with that limited sample size and verified by listening.
+New output goes to `MyDrive/DataForge/delivery_ab/outputs/<run-id>/`.
+The small default corpus, selected recordings, ASR proxy and simulated codec
+support a pilot only. This branch does not perform real phone-provider validation.
