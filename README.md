@@ -2,7 +2,7 @@
 
 Branch: `codex/noise-conditioned-ab`.
 
-Project scope: only **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**, in that order. Shared planning documents are [hackathon guidelines](HACKATHON_GUIDELINES.md), [implementation roadmap](rime_implementation_roadmap.md), and [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged by this test-scope decision.
+Project scope: only **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**, in that order. Shared planning documents live only on `main`: [hackathon guidelines](https://github.com/Drazr/DataForge/blob/main/HACKATHON_GUIDELINES.md), [implementation roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md), and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged by this test-scope decision.
 
 Copy the eleven cells in [colab_noise_ab.py](colab_noise_ab.py) into Colab, preserving
 the three-blank-line cell separators. Cells 1–2 mount Drive and clone this branch.
