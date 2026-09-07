@@ -14,7 +14,7 @@ lightweight dependencies and their tests. It needs no synthesis, ASR or model
 inference. The existing analysis excludes DNSMOS from its breakpoint decisions.
 
 See [the runbook](docs/GRID_ANALYSIS_RUNBOOK.md), [input mapping](docs/GRID_ANALYSIS_INPUTS.md)
-and [branch handoffs](docs/BRANCH_HANDOFF.md). New analysis results stay in
+and [branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md). New analysis results stay in
 `MyDrive/DataForge/grid_analysis/outputs/<run-id>/<session>/results/` and can be
 copied into the Delivery A/B branch for human challenge review.
 
