@@ -164,14 +164,180 @@ LISTENING_REVIEW = {
 
 
 
-# %% Cell 9 - Freeze the winning candidate before accessing held-out results.
-# Populate LISTENING_REVIEW in Cell 8. A no-winner result is valid evidence.
-selection = experiment.select(CHALLENGE_CONDITIONS, LISTENING_REVIEW)
+# %% Cell 9 - Install the free local audio reviewer (T4 GPU required).
+# This adds a post-metrics model-review amendment. It does not access held-out audio.
+# Qwen2.5-Omni-7B needs 4-bit loading on a 16 GB T4. If it cannot load, use the
+# documented 3B fallback in the next cell; do not silently change the model.
+if not __import__("torch").cuda.is_available():
+    raise RuntimeError("Select a T4 GPU runtime before running the model review")
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--upgrade",
+                "git+https://github.com/huggingface/transformers@v4.51.3-Qwen2.5-Omni-preview",
+                "accelerate", "bitsandbytes", "qwen-omni-utils"], check=True)
+print("Installed the local audio-review dependencies. Continue directly to Cell 10.")
+
+
+
+# %% Cell 10 - Run the full development model review without giving the model answer keys.
+# T4 preferred: Qwen2.5-Omni-7B in 4-bit mode. Set MODEL_ID to the 3B fallback
+# only if Cell 10 reports CUDA out of memory, then restart the runtime and rerun
+# Cells 1-2, 4-10. This review is an auxiliary model judgment, not human evidence.
+import csv
+import hashlib
+import re
+import time
+from datetime import datetime, timezone
+import torch
+from transformers import BitsAndBytesConfig, Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcessor
+from qwen_omni_utils import process_mm_info
+from dataforge.experiment import fact_score
+
+MODEL_ID = "Qwen/Qwen2.5-Omni-7B"
+MODEL_FALLBACK_ID = "Qwen/Qwen2.5-Omni-3B"
+MODEL_REVISION = None  # Pin a Hugging Face commit here only if you need an exact re-run later.
+MODEL_REVIEW_ROOT = experiment.root / "model_review_qwen"
+MODEL_REVIEW_ROOT.mkdir(parents=True, exist_ok=True)
+REVIEW_PROMPT = """Listen to this recording. It may contain competing speakers.
+Focus on the appointment, payment, and reference-code message, not unrelated background reading.
+Transcribe only words actually audible from the target speaker. Preserve repetitions and contradictions.
+Write [unclear] instead of guessing masked words. Do not infer names, numbers, dates, times, or negations.
+Assess target speech clarity and audible synthesis artifacts; background speech alone is not an artifact.
+Return ONLY valid JSON with these exact fields: transcript (string), clarity (clear|partial|unintelligible),
+competing_voice (boolean), artifacts (none|minor|severe|uncertain),
+naturalness (acceptable|unacceptable|uncertain), notes (string)."""
+
+queue = development[(development.fact_count > 0) &
+                    development.variant.isin(["baseline", "repeat"]) &
+                    development.condition.isin(["clean", *CHALLENGE_CONDITIONS])].copy()
+queue = queue.sort_values(["text_id", "variant", "replicate", "condition"]).reset_index(drop=True)
+expected_rows = len(queue)
+if expected_rows == 0:
+    raise ValueError("Run Cell 7 before model review")
+if set(queue.variant) != {"baseline", "repeat"}:
+    raise ValueError("The review queue must contain Baseline and Repeat only")
+if queue.audio_path.map(lambda p: Path(p).is_file()).eq(False).any():
+    raise FileNotFoundError("The full A/B audio cache is required for review")
+
+quantization = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                                  bnb_4bit_use_double_quant=True,
+                                  bnb_4bit_compute_dtype=torch.float16)
+try:
+    reviewer = Qwen2_5OmniForConditionalGeneration.from_pretrained(
+        MODEL_ID, revision=MODEL_REVISION, quantization_config=quantization,
+        torch_dtype=torch.float16, device_map="auto", low_cpu_mem_usage=True)
+except torch.cuda.OutOfMemoryError as error:
+    raise RuntimeError(f"{MODEL_ID} did not fit this GPU. Set MODEL_ID = {MODEL_FALLBACK_ID!r}, restart, and rerun.") from error
+reviewer.disable_talker()  # Text-only review; saves roughly 2 GB of GPU memory.
+reviewer.eval()
+processor = Qwen2_5OmniProcessor.from_pretrained(MODEL_ID, revision=MODEL_REVISION)
+
+def write_json(path, value):
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2, allow_nan=False), encoding="utf-8")
+    temporary.replace(path)
+
+def stable_hash(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            h.update(block)
+    return h.hexdigest()
+
+def parse_review(text):
+    text = re.sub(r"^```(?:json)?\\s*|\\s*```$", "", text.strip(), flags=re.I)
+    answer = json.loads(text)
+    required = {"transcript", "clarity", "competing_voice", "artifacts", "naturalness", "notes"}
+    if set(answer) != required or not isinstance(answer["transcript"], str) or not answer["transcript"].strip():
+        raise ValueError("Invalid model JSON")
+    if answer["clarity"] not in {"clear", "partial", "unintelligible"} or not isinstance(answer["competing_voice"], bool):
+        raise ValueError("Invalid clarity/competing_voice")
+    if answer["artifacts"] not in {"none", "minor", "severe", "uncertain"} or answer["naturalness"] not in {"acceptable", "unacceptable", "uncertain"}:
+        raise ValueError("Invalid quality label")
+    return answer
+
+protocol = {
+    "review_type": "model", "human_review": "pending", "model_id": MODEL_ID,
+    "model_revision": MODEL_REVISION, "quantization": "4-bit NF4 double quantization, float16 compute",
+    "prompt": REVIEW_PROMPT, "max_new_tokens": 160, "temperature": 0,
+    "scope": "development Baseline/Repeat, clean plus frozen challenge; no held-out audio",
+    "amendment": "User requested model review after development metrics and before held-out access.",
+}
+write_json(MODEL_REVIEW_ROOT / "protocol.json", protocol)
+records = []
+for index, row in queue.iterrows():
+    destination = MODEL_REVIEW_ROOT / "responses" / f"{index:04d}.json"
+    audio_path = Path(row.audio_path)
+    audio_hash = stable_hash(audio_path)
+    if destination.exists():
+        record = json.loads(destination.read_text())
+        if record.get("audio_sha256") != audio_hash or record.get("model_id") != MODEL_ID:
+            raise ValueError("Existing review cache belongs to another input/model; use a new output folder")
+    else:
+        record = {"text_id": row.text_id, "variant": row.variant, "replicate": int(row.replicate),
+                  "condition": row.condition, "audio_path": str(audio_path), "audio_sha256": audio_hash,
+                  "model_id": MODEL_ID, "created_utc": datetime.now(timezone.utc).isoformat()}
+        conversation = [{"role": "user", "content": [
+            {"type": "audio", "audio": str(audio_path)}, {"type": "text", "text": REVIEW_PROMPT}]}]
+        started = time.monotonic()
+        try:
+            prompt = processor.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
+            audios, images, videos = process_mm_info(conversation)
+            inputs = processor(text=prompt, audio=audios, images=images, videos=videos,
+                               return_tensors="pt", padding=True).to("cuda")
+            with torch.inference_mode():
+                generated = reviewer.generate(**inputs, return_audio=False, do_sample=False, max_new_tokens=160)
+            generated = generated[:, inputs.input_ids.shape[1]:]
+            raw_text = processor.batch_decode(generated, skip_special_tokens=True,
+                                              clean_up_tokenization_spaces=False)[0]
+            record["raw_response"] = raw_text
+            judgment = parse_review(raw_text)
+            facts = next(item["facts"] for item in corpus if item["id"] == row.text_id)
+            recovery, details = fact_score(judgment["transcript"], facts)
+            record.update(status="ok", judgment=judgment, fact_recovery=recovery, fact_details=details)
+        except Exception as error:
+            record.update(status="error", error=f"{type(error).__name__}: {error}")
+        record["elapsed_seconds"] = round(time.monotonic() - started, 3)
+        write_json(destination, record)
+    records.append(record)
+    print(f"{index + 1}/{expected_rows}: {row.text_id} {row.variant} {row.condition} → {record['status']}")
+
+valid = [record for record in records if record.get("status") == "ok"]
+repeat = [record for record in valid if record["variant"] == "repeat"]
+complete = len(records) == expected_rows and len(valid) == expected_rows
+facts_preserved = complete and bool(repeat) and all(record["fact_recovery"] == 1.0 for record in repeat)
+quality_acceptable = complete and bool(repeat) and all(
+    record["judgment"]["naturalness"] == "acceptable" and record["judgment"]["artifacts"] in {"none", "minor"}
+    for record in repeat)
+MODEL_LISTENING_REVIEW = {
+    "repeat": {"reviewer_type": "model", "facts_preserved": bool(facts_preserved),
+               "quality_acceptable": bool(quality_acceptable), "human_review": "pending",
+               "notes": "Qwen2.5-Omni local model review. This is not a human-comprehension claim."}
+}
+summary = {**protocol, "expected_clips": expected_rows, "successful_clips": len(valid), "complete": complete,
+           "model_gate_pass": bool(facts_preserved and quality_acceptable),
+           "model_listening_review": MODEL_LISTENING_REVIEW,
+           "limitations": ["Model review is not calibrated human listening.",
+                           "Errors, missing clips, uncertain naturalness, and incomplete facts fail closed.",
+                           "No held-out audio, metric thresholds, or synthesis settings were changed."]}
+write_json(MODEL_REVIEW_ROOT / "summary.json", summary)
+print(json.dumps(summary, indent=2))
+
+
+
+# %% Cell 11 - Freeze the metric-passing candidate using the completed model-review amendment.
+# Repeat was the only Cell 7 metric-screen pass. This records the model decision
+# separately; it does not represent the review as human evidence.
+if not summary["complete"]:
+    raise ValueError("Model review is incomplete; resume Cell 10 before selection")
+if not summary["model_gate_pass"]:
+    raise ValueError("No candidate passes metrics and the conservative model review; report no winner")
+selection = experiment.select(CHALLENGE_CONDITIONS, MODEL_LISTENING_REVIEW)
+selection["review_protocol"] = "model_review_qwen"
+save_json(experiment.root / "selection.json", selection)
 print("Frozen candidate:", selection["variant"])
 
 
 
-# %% Cell 10 - One held-out validation; resumes use the same cached outputs and candidate.
+# %% Cell 12 - One held-out validation; resumes use the same cached outputs and candidate.
 validation = experiment.run("heldout", ["baseline", selection["variant"]], RIME_API_KEY)
 validation_comparison = experiment.comparisons(validation, selection["conditions"])
 validation_comparison.to_csv(experiment.root / "heldout_comparison.csv", index=False)
@@ -180,7 +346,7 @@ print("Do not tune the candidate or thresholds on this held-out result. A failur
 
 
 
-# %% Cell 11 - Export metrics, plots, and a truthful evidence status.
+# %% Cell 13 - Export metrics, plots, and a truthful evidence status.
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -199,7 +365,7 @@ for metric in ("wer", "fact_recovery", "dnsmos_ovrl"):
 passed = bool(validation_comparison.iloc[0].screen_pass)
 save_json(experiment.root / "evidence_status.json", {
     "candidate": selection["variant"], "heldout_metric_screen_pass": passed,
-    "human_heldout_review": "pending", "real_phone_validation": "not run",
+    "development_review": "model; human review pending", "human_heldout_review": "pending", "real_phone_validation": "not run",
     "scope": f"{len(noises)} noise files, fixed text split, simulated 8 kHz PCMU channel; see evidence_scope.json",
     "limitations": "ASR fact recovery is a lexical proxy; no human comprehension study or general noise policy",
 })

@@ -22,11 +22,12 @@ Use the eleven cells in `colab_noise_ab.py` on `noise-conditioned-ab`.
    three texts losing a cleanly recovered fact in every repeat.
 5. Cell 7 runs short-clause, targeted repetition and slowdown variants, separately.
    New Rime requests are billed. Identical cached speech is reused.
-6. Cell 8: listen to matched development clips and populate `LISTENING_REVIEW`.
-   Check all critical texts/conditions, negation, numbers and naturalness.
-7. Cell 9 freezes a candidate using the preregistered metric and human checks.
-   If none qualifies, stop and report no winner.
-8. Cells 10–11 run the frozen baseline/candidate on held-out texts once and export
+6. Cells 9–10 run the optional free, local Qwen audio-model review on a T4 GPU.
+   The model is not shown expected facts or the prior ASR transcript. It writes
+   raw responses and is labeled as model review; human review remains pending.
+7. Cell 11 freezes a candidate only after the metric screen and completed model
+   review pass. If none qualifies, stop and report no winner.
+8. Cells 12–13 run the frozen baseline/candidate on held-out texts once and export
    comparisons, audio, scores and the listening queue. Review held-out audio.
    Do not tune on held-out results. A failed validation is a valid outcome.
 

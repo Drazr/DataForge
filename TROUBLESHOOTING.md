@@ -1,7 +1,8 @@
 # Noise-Conditioned A/B development log
 
-Updated 2026-09-08. A/B synthesis has not started. This log records inherited
-setup fixes and the baseline issues that currently prevent this test.
+Updated 2026-09-08. Development A/B synthesis and metrics have now been reported.
+Candidate selection and held-out validation remain pending. Earlier entries below
+preserve the status at each stage; the latest development update is at the end.
 
 | Step | Problem | Countermeasure and reason | Status |
 | --- | --- | --- | --- |
@@ -56,3 +57,27 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
 8. Grid/Breakpoint Analysis was retired to prioritize the direct A/B test. Removed
    the unused Grid input from Cells 4–5; this reduces setup without changing the
    frozen baseline, challenge, metrics or held-out rules.
+
+## Development A/B and delegated review
+
+9. Cell 6 confirmed the frozen challenge and recurrent texts `critical_01`,
+   `critical_03`, `critical_05`; no new challenge selection was needed.
+10. User-reported Cell 7 metrics: Repeat passed the screen (fact gain +0.08163265,
+    WER delta -0.010833, duration ratio 1.08410, DNSMOS delta +0.0275485).
+    Clauses and Slow failed. Keep these original results; do not tune their gates.
+11. Cell 9 raised "No candidate passes the metrics AND listening review" while
+    Cell 8's review fields were still false. This was an uncompleted review gate,
+    not evidence that every candidate failed the metric screen. Held-out cells
+    remain paused until a valid selection exists.
+12. The four reviewed clips contained simultaneous voices. This is expected at
+    competing speech -5 dB; assess the intended target message. A single four-clip
+    review does not cover every critical development text and replicate.
+13. User requested delegating the full review to a model. Added a local, free
+    Qwen2.5-Omni reviewer with hashes, fixed prompts, raw responses, complete
+    coverage checks, and explicit model/human provenance. This is a post-metrics
+    protocol amendment. No model output is presented as human listening.
+14. Earlier chat incorrectly said DNSMOS was absent. The implemented comparisons
+    already include DNSMOS; corrected the documentation instead of duplicating it.
+15. Received `development_model_review.zip`: 56 Baseline/Repeat development clips.
+    Model download requires network access; used pinned public model/runtime
+    downloads and verified model SHA-256 values. No audio is uploaded to a service.

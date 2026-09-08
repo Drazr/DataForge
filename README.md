@@ -21,10 +21,17 @@ The verified stress-baseline review is included under
 `inputs/noise_masking_review/6bd1eb398398af0e/`. It supports the prefilled
 `competing_speech_-5dB` challenge. Cell 4 copies the complete original run and
 synthesis cache from Drive; the review is not a replacement for that handoff.
-No A/B results have been measured yet. Local checks: `python -m unittest discover -s tests -v`
-after installing `requirements-colab.txt` and FFmpeg. Human listening and a real
-Colab execution remain necessary.
+Development A/B metrics have been reported from Colab: Repeat passed the metric
+screen; Clauses and Slow failed. Review and candidate selection are separate gates,
+and held-out validation remains pending. The user requested a delegated
+[local model review](docs/MODEL_REVIEW.md), recorded as a protocol amendment with
+human review explicitly pending. Local checks:
+`python -m unittest discover -s tests -v` after installing dependencies and FFmpeg.
 
 Session problems, fixes and the current baseline eligibility decision are tracked
 in [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Saved-baseline review belongs to
 Noise-Masking Cell 10; there is no separate Colab review script in this branch.
+
+Development audio can be audited with `scripts/run_local_review.py`; this is
+separate from the upstream saved-baseline rescoring workflow. Model-review
+evidence retains the raw responses and audio hashes without committing model weights.

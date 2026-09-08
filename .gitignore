@@ -20,3 +20,7 @@ models/
 
 # Full machine-specific handoffs are created by Colab Cell 4 from shared Drive.
 inputs/noise_masking/
+
+# Local/Colab model-review responses are run-specific evidence; archive the
+# completed Drive output separately before sharing it for repository import.
+evidence/model_review/

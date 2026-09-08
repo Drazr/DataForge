@@ -1,2 +1,3 @@
 # Preserve copied evidence bytes across platforms so archive hashes remain useful.
 inputs/noise_masking_review/** -text
+evidence/model_review/** -text
