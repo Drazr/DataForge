@@ -61,3 +61,13 @@ async def test_actual_agent_session_plays_supplied_pcm_without_tts_or_llm():
         assert sink.samples==2400
     finally:
         await session.aclose()
+
+
+async def test_evidence_export_survives_missing_git_permission(monkeypatch):
+    def unavailable(*args,**kwargs):raise PermissionError('Git cannot be launched')
+    monkeypatch.setattr(worker.subprocess,'run',unavailable)
+    voice=worker.VoiceWorker('offline-evidence')
+    report=voice.evidence()
+    assert report['git_commit']=='unavailable'
+    assert report['snapshot']['confirmed'] is False
+    assert report['configuration']['provider']=='Rime'

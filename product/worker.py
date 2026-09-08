@@ -142,10 +142,14 @@ class VoiceWorker:
         self.runtime.recover()
 
     def evidence(self):
-        revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True)
+        try:
+            revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True, timeout=5)
+            commit = revision.stdout.strip() if revision.returncode == 0 else 'unavailable'
+        except (OSError, subprocess.TimeoutExpired):
+            commit = 'unavailable'
         endpoint = urlsplit(os.environ.get('LIVEKIT_URL', ''))
         return {'schema': 1, 'session_id': self.id, 'snapshot': self.controller.snapshot(),
-                'git_commit': revision.stdout.strip() if revision.returncode == 0 else 'unavailable',
+                'git_commit': commit,
                 'dependencies': {name: version(name) for name in ('livekit-agents','livekit-plugins-rime','livekit-plugins-silero','livekit')},
                 'livekit_endpoint': f'{endpoint.scheme}://{endpoint.hostname or ""}',
                 'livekit_region': os.environ.get('LIVEKIT_REGION_LABEL') or 'not verified',
