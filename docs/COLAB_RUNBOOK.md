@@ -41,9 +41,9 @@ before starting. Then run Cells 1–10 in order. Cell 4 creates a new frozen run
 the shared cache avoids new baseline TTS requests only when the model, voice,
 language and sample-rate remain unchanged. Verify Cell 8 playback before Cell 9.
 Cell 10 automatically reviews the just-created run. If no condition has two
-distinct repeated fact losses, both
-downstream workflows are inapplicable. If one qualifies, proceed to A/B and
-defer Grid/Breakpoint Analysis.
+distinct repeated fact losses, A/B is inapplicable. The completed stress run
+qualified `competing_speech_-5dB`, so proceed to A/B. Grid/Breakpoint Analysis
+has been retired from the active workflow.
 
 Keep the complete `noise_masking/outputs/<run-id>/` folder and its referenced
 synthesis cache. Keep downloaded datasets and evaluator models in shared Drive.
