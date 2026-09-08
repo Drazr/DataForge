@@ -6,7 +6,11 @@ Use the ten cells in `colab_noise_masking.py` on `noise-masking-test`.
 2. Cell 3 installs dependencies and FFmpeg on Python 3.11/3.12/3.13. Restart
    after installation, rerun Cells 1–2, skip Cell 3, and continue at Cell 4.
 3. Cell 4 reads `RIME_API_KEY` from Colab Secrets, checks the voice catalog and
-   freezes corpus, SNR and evaluator settings. CPU/int8 is the default.
+   freezes corpus, SNR and evaluator settings. It currently selects the
+   `stress_0_to_minus5` profile and requires a Colab T4 GPU for CUDA/float16 ASR.
+   This evaluates 21 development texts × two repeats × five conditions = 210
+   scored clips; prior baseline syntheses are reused from the shared cache.
+   `standard_10_to_0` remains available as an explicit reproducibility profile.
 4. Cells 5–7 download/select MUSAN noise, obtain listening approval, download
    evaluator models and record the run. The optional archive is about 11 GB and
    needs roughly 13 GiB temporary space, plus Drive storage for retained files.
@@ -31,6 +35,15 @@ speech uses a fixed 20 ms frame gate within 40 dB of peak frame power, not ITU P
 Noise gain is fixed across durations; retain nominal and measured SNR when comparing.
 Repeated losses require the same fact to recover cleanly and fail in every noisy
 repeat. The small default corpus/two recordings support pilot conclusions only.
+
+For the stronger baseline, choose **Runtime → Change runtime type → T4 GPU**
+before starting. Then run Cells 1–10 in order. Cell 4 creates a new frozen run;
+the shared cache avoids new baseline TTS requests only when the model, voice,
+language and sample-rate remain unchanged. Verify Cell 8 playback before Cell 9.
+Cell 10 automatically reviews the just-created run. If no condition has two
+distinct repeated fact losses, both
+downstream workflows are inapplicable. If one qualifies, proceed to A/B and
+defer Grid/Breakpoint Analysis.
 
 Keep the complete `noise_masking/outputs/<run-id>/` folder and its referenced
 synthesis cache. Keep downloaded datasets and evaluator models in shared Drive.

@@ -107,6 +107,14 @@ class AudioTests(unittest.TestCase):
                 cell = "# %%" + cell
             compile(cell, "colab_cell", "exec")
 
+    def test_stress_profile_is_precommitted_and_preserves_required_repeats(self):
+        source = (ROOT / "colab_noise_masking.py").read_text(encoding="utf-8")
+        self.assertIn('BASELINE_PROFILE = "stress_0_to_minus5"', source)
+        self.assertIn('"stress_0_to_minus5": [0, -5]', source)
+        self.assertIn('GPU_REQUIRED = True', source)
+        self.assertIn('config["replicates"] * conditions', source)
+        self.assertIn('"dnsmos_enabled": true', (ROOT / "experiment.json").read_text())
+
     def test_failed_http_is_not_retried(self):
         class Response:
             status_code = 401

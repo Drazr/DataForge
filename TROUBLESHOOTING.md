@@ -49,3 +49,13 @@ Reproduce offline with `python scripts/review_bundle.py PATH_TO_REVIEW_ZIP`.
 Next: run only Cell 10 to persist the review in Drive. A further A/B study needs
 a separately planned development baseline; keep the original run and held-out
 split unchanged, and do not reduce the recurrence gate to force eligibility.
+
+## Next baseline decision
+
+Grid/Breakpoint Analysis is deferred in favor of retaining Noise-Conditioned A/B
+if a stronger baseline validates a challenge. Cell 4 now commits the separate
+`stress_0_to_minus5` development profile before model loading: 0 dB and −5 dB,
+two noise sources, two repeats, DNSMOS retained, and a required T4 GPU ASR
+evaluator. This is 210 scores, while prior raw speech is reused from the
+compatible synthesis cache. If no condition has two distinct repeated losses,
+A/B and Grid are both inapplicable; if it does, run A/B and defer Grid.

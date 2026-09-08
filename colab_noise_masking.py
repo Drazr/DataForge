@@ -72,12 +72,34 @@ from dataforge.downloads import download_musan, prepare_models
 
 RIME_API_KEY = userdata.get("RIME_API_KEY")
 config = json.loads((REPO / "experiment.json").read_text())
-# Choose these before Cell 7 freezes the run. Extra SNR points increase scoring time.
-# For a finer initial sweep, use [10, 7.5, 5, 2.5, 0]. Keep held-out texts untouched.
-config["snrs_db"] = [10, 5, 0]
-# CPU/int8 is portable. For a supported Colab GPU, set both values before models load:
-# config["asr_device"] = "cuda"
-# config["asr_compute_type"] = "float16"
+# Choose before Cell 7 freezes the run. This profile is a separate, stronger
+# development baseline: 0 dB retains comparability and -5 dB precommits a
+# materially harsher condition. It never accesses held-out texts.
+BASELINE_PROFILE = "stress_0_to_minus5"
+BASELINE_PROFILES = {
+    "standard_10_to_0": [10, 5, 0],
+    "stress_0_to_minus5": [0, -5],
+}
+if BASELINE_PROFILE not in BASELINE_PROFILES:
+    raise ValueError(f"Unknown baseline profile: {BASELINE_PROFILE}")
+config["snrs_db"] = BASELINE_PROFILES[BASELINE_PROFILE]
+config["baseline_profile"] = BASELINE_PROFILE
+
+# The stress profile evaluates 21 development texts x 2 repeats x 5 conditions.
+# Select Runtime > Change runtime type > T4 GPU before using this profile.
+GPU_REQUIRED = True
+if GPU_REQUIRED:
+    try:
+        gpu = subprocess.run(["nvidia-smi", "-L"], check=True, capture_output=True, text=True).stdout.strip()
+    except (FileNotFoundError, subprocess.CalledProcessError) as error:
+        raise RuntimeError("Select a Colab T4 GPU, restart the session, and rerun Cells 1-4") from error
+    config["asr_device"] = "cuda"
+    config["asr_compute_type"] = "float16"
+    print("GPU evaluator:", gpu)
+
+conditions = 1 + 2 * len(config["snrs_db"])
+planned_scores = sum(x["split"] == "dev" for x in json.loads((REPO / "fixtures/corpus.json").read_text())) * config["replicates"] * conditions
+print(f"Baseline profile: {BASELINE_PROFILE}; planned development scores: {planned_scores}")
 catalog_check = validate_catalog(config)
 CORPUS_PATH = REPO / "fixtures/corpus.json"  # Replace with a larger, pre-split corpus before any run.
 corpus = load_corpus(CORPUS_PATH)
@@ -231,9 +253,10 @@ from dataforge.experiment import noise_failure_evidence, fact_score
 import re
 import copy
 
-SOURCE_RUN = Path(globals().get("BASELINE_REVIEW_SOURCE",
-    "/content/drive/MyDrive/DataForge/noise_masking/outputs/1f95820a36625efe"))
-# For a different run, set BASELINE_REVIEW_SOURCE before executing this cell.
+_default_review_source = (experiment.root if "experiment" in globals()
+                          else "/content/drive/MyDrive/DataForge/noise_masking/outputs/1f95820a36625efe")
+SOURCE_RUN = Path(globals().get("BASELINE_REVIEW_SOURCE", _default_review_source))
+# Set BASELINE_REVIEW_SOURCE only to review a different completed run.
 manifest_path = SOURCE_RUN / "manifest.json"
 manifest = json.loads(manifest_path.read_text())
 run_id = hashlib.sha256(json.dumps(manifest, sort_keys=True).encode()).hexdigest()
