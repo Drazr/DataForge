@@ -81,3 +81,9 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
 15. Received `development_model_review.zip`: 56 Baseline/Repeat development clips.
     Model download requires network access; used pinned public model/runtime
     downloads and verified model SHA-256 values. No audio is uploaded to a service.
+16. The first Colab 7B review loaded successfully, but saving response `0000`
+    failed because its nested `responses/` directory had not been created. Updated
+    Cell 10's atomic JSON writer to create parent directories and reuse an already
+    loaded matching reviewer when the cell is rerun. This avoids another model
+    load or download in the same runtime. Hugging Face token, RoPE-key, eager-to-
+    SDPA and text-only audio-output warnings observed during loading are nonfatal.

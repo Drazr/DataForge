@@ -220,17 +220,23 @@ if queue.audio_path.map(lambda p: Path(p).is_file()).eq(False).any():
 quantization = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                                   bnb_4bit_use_double_quant=True,
                                   bnb_4bit_compute_dtype=torch.float16)
-try:
-    reviewer = Qwen2_5OmniForConditionalGeneration.from_pretrained(
-        MODEL_ID, revision=MODEL_REVISION, quantization_config=quantization,
-        torch_dtype=torch.float16, device_map="auto", low_cpu_mem_usage=True)
-except torch.cuda.OutOfMemoryError as error:
-    raise RuntimeError(f"{MODEL_ID} did not fit this GPU. Set MODEL_ID = {MODEL_FALLBACK_ID!r}, restart, and rerun.") from error
-reviewer.disable_talker()  # Text-only review; saves roughly 2 GB of GPU memory.
-reviewer.eval()
-processor = Qwen2_5OmniProcessor.from_pretrained(MODEL_ID, revision=MODEL_REVISION)
+loaded_config = getattr(globals().get("reviewer"), "config", None)
+loaded_model_id = getattr(loaded_config, "_name_or_path", None)
+if loaded_model_id == MODEL_ID and "processor" in globals():
+    print("Reusing the audio reviewer already loaded in this runtime:", MODEL_ID)
+else:
+    try:
+        reviewer = Qwen2_5OmniForConditionalGeneration.from_pretrained(
+            MODEL_ID, revision=MODEL_REVISION, quantization_config=quantization,
+            torch_dtype=torch.float16, device_map="auto", low_cpu_mem_usage=True)
+    except torch.cuda.OutOfMemoryError as error:
+        raise RuntimeError(f"{MODEL_ID} did not fit this GPU. Set MODEL_ID = {MODEL_FALLBACK_ID!r}, restart, and rerun.") from error
+    reviewer.disable_talker()  # Text-only review; saves roughly 2 GB of GPU memory.
+    reviewer.eval()
+    processor = Qwen2_5OmniProcessor.from_pretrained(MODEL_ID, revision=MODEL_REVISION)
 
 def write_json(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(value, indent=2, allow_nan=False), encoding="utf-8")
     temporary.replace(path)
