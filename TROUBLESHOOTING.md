@@ -28,3 +28,7 @@ A/B cannot proceed under the existing gate. Clean fact recovery is 95.92%, versu
 89.80% for competing speech at 0 dB. No A/B requests or held-out scoring were run.
 The local A/B suite passed 32 tests, with one Noise-only test skipped. Use a
 separately planned development baseline if further A/B work is pursued.
+
+Current decision: Grid/Breakpoint Analysis is deferred in favor of this A/B
+workflow if the next `stress_0_to_minus5` baseline qualifies a challenge. If it
+does not qualify, A/B is inapplicable and neither downstream workflow should run.
