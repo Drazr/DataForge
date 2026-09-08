@@ -1,5 +1,11 @@
 # Delivery A/B in Colab
 
+Current input: `MyDrive/DataForge/noise_masking/outputs/6bd1eb398398af0e`.
+Cell 4 and Cell 6 are prefilled for this run and `competing_speech_-5dB`.
+Use a GPU runtime to match its frozen CUDA/float16 evaluator. Keep Cell 3 as
+supplied; restart after installing, then rerun Cells 1–2 and continue at Cell 4.
+All existing human-listening flags still require the user's observations.
+
 Use the eleven cells in `colab_noise_ab.py` on `noise-conditioned-ab`.
 
 1. Cells 1–3 mount Drive, clone this branch into `/content/DataForge-delivery`

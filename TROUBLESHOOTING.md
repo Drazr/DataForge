@@ -32,3 +32,24 @@ separately planned development baseline if further A/B work is pursued.
 Current decision: Grid/Breakpoint Analysis is deferred in favor of this A/B
 workflow if the next `stress_0_to_minus5` baseline qualifies a challenge. If it
 does not qualify, A/B is inapplicable and neither downstream workflow should run.
+
+## Stress baseline accepted for the next A/B run
+
+1. Received the completed `6bd1eb398398af0e` stress baseline: 210 scores,
+   CUDA/float16 ASR, two repeats, both noises at 0 and -5 dB.
+2. Cell 10 reported **zero corrections**. Competing speech at -5 dB has three
+   recurrent texts: `critical_01` (time/date), `critical_03` (code), and
+   `critical_05` (time). Clean fact recovery is 95.92%; the challenge is 71.43%.
+3. Copied the user's review ZIP into this branch, verifying 70 critical audio
+   hashes and all 210 row identities. The complete synthesis cache and remaining
+   audio are still in Drive; Cell 4 performs that verified runtime handoff.
+4. Prefilled the source run in Cell 4 and challenge in Cell 6. Added a stale
+   module check and a GPU availability check so the frozen producer/consumer
+   setup is preserved. Cell 3 and the shared scoring implementation are unchanged.
+5. The review manifest's implementation hash matches the A/B scorer's Git/LF
+   content. No migration is needed because the producer used the corrected scorer.
+6. Human baseline listening remains unconfirmed. A/B metrics, candidate selection
+   and held-out validation have not run. Grid stays deferred for this sequence.
+7. Validation passed: 33 tests, with one Noise-only check skipped. The new
+   evidence regression recomputes all 210 fact scores and confirms the same
+   three recurrent texts using the unchanged consumer scorer.

@@ -18,7 +18,11 @@ Shared audio/scoring helpers match the Noise-Masking branch. The frozen producer
 manifest supplies runtime corpus/settings; the example config and fixtures support
 shared-library tests. This branch does not perform a fresh development noise sweep.
 
-No measured results are included. Local checks: `python -m unittest discover -s tests -v`
+The verified stress-baseline review is included under
+`inputs/noise_masking_review/6bd1eb398398af0e/`. It supports the prefilled
+`competing_speech_-5dB` challenge. Cell 4 copies the complete original run and
+synthesis cache from Drive; the review is not a replacement for that handoff.
+No A/B results have been measured yet. Local checks: `python -m unittest discover -s tests -v`
 after installing `requirements-colab.txt` and FFmpeg. Human listening and a real
 Colab execution remain necessary.
 

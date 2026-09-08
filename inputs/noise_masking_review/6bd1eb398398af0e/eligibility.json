@@ -1,0 +1,9 @@
+{
+  "run_id": "6bd1eb398398af0edcbe31d260e15fa71a6e5aca1c3d9abc117aef7028d71966",
+  "scores": 210,
+  "minimum_recurrent_texts": 2,
+  "eligible_conditions": [
+    "competing_speech_-5dB"
+  ],
+  "human_listening_review": "pending"
+}

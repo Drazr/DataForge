@@ -31,6 +31,10 @@ else:
 if not (REPO / "experiment.json").is_file():
     raise ValueError("Project files missing; clone the branch or extract the source ZIP into /content/DataForge-delivery")
 sys.path.insert(0, str(REPO))
+# Imports from a previously used Noise-Masking checkout survive in memory.
+loaded_experiment = sys.modules.get("dataforge.experiment")
+if loaded_experiment is not None and Path(loaded_experiment.__file__).resolve().parent.parent != REPO.resolve():
+    raise RuntimeError("Restart the session, rerun Cells 1-2, then continue at Cell 4 to load the A/B checkout")
 
 
 
@@ -62,10 +66,24 @@ print("Restart the Colab session after installation to unload old packages. "
 
 # %% Cell 4 - Copy the completed Noise-Masking outputs into this branch.
 import json
-from dataforge.handoff import copy_run, copy_grid_results
-SOURCE_NOISE_RUN = WORK / "noise_masking/outputs/REPLACE_WITH_RUN_ID"
+from dataforge.handoff import copy_run, copy_grid_results, verify_handoff
+SOURCE_NOISE_RUN = WORK / "noise_masking/outputs/6bd1eb398398af0e"
+EXPECTED_BASELINE_ID = "6bd1eb398398af0edcbe31d260e15fa71a6e5aca1c3d9abc117aef7028d71966"
+# The review ZIP is supporting evidence. The complete run and synthesis cache
+# are copied from shared Drive here, including audio absent from that ZIP.
+required = ["manifest.json", "baseline_results.csv", "synthesis_cache.json"]
+missing = [name for name in required if not (SOURCE_NOISE_RUN / name).is_file()]
+if missing or not (SOURCE_NOISE_RUN / "rows").is_dir():
+    raise FileNotFoundError(f"Retain the complete baseline folder at {SOURCE_NOISE_RUN}; missing: {missing or ['rows/']}")
+import hashlib
+source_manifest = json.loads((SOURCE_NOISE_RUN / "manifest.json").read_text())
+source_id = hashlib.sha256(json.dumps(source_manifest, sort_keys=True).encode()).hexdigest()
+if source_id != EXPECTED_BASELINE_ID:
+    raise ValueError("The source does not match the reviewed stress baseline")
 COPIED_BASELINE = copy_run(SOURCE_NOISE_RUN, REPO / "inputs/noise_masking", for_delivery=True)
+handoff = verify_handoff(COPIED_BASELINE)
 print("Copied baseline inputs:", COPIED_BASELINE)
+print("Verified handoff files:", len(handoff["files"]))
 # Optional: copy Grid Analysis conclusions for this same development baseline.
 GRID_RESULTS = None  # e.g. WORK / "grid_analysis/outputs/RUN_ID/SESSION/results"
 COPIED_GRID = None
@@ -85,6 +103,11 @@ from dataforge.experiment import validate_catalog, validate_challenges, noise_fa
 RIME_API_KEY = userdata.get("RIME_API_KEY")
 experiment = start_delivery(COPIED_BASELINE, WORK / "delivery_ab/outputs")
 config, corpus, noises = experiment.config, experiment.corpus, experiment.noises
+# Preserve the producer's evaluator configuration; do not silently switch to CPU.
+if config["asr_device"] == "cuda":
+    import ctranslate2
+    if ctranslate2.get_cuda_device_count() < 1:
+        raise RuntimeError("This baseline used CUDA/float16. Select a Colab GPU and restart before continuing")
 # The original noise datasets and downloaded evaluator models stay in shared Drive.
 if not Path(config["asr_local_path"]).is_dir() or not Path(config["dnsmos_model_path"]).is_file():
     raise ValueError("Retain the Noise-Masking evaluator downloads at their original Drive paths")
@@ -100,7 +123,7 @@ print("Baseline imported without rerunning it; A/B outputs:", experiment.root)
 
 # %% Cell 6 - Freeze one or two challenge conditions from repeatable baseline failures.
 # Enter conditions shown in Cell 5 with at least two recurrent texts.
-CHALLENGE_CONDITIONS = []
+CHALLENGE_CONDITIONS = ["competing_speech_-5dB"]
 # If no noisy failure repeats, stop here; baseline diagnostics are already saved.
 # This branch preserves the imported grid/configuration. Use Noise Masking for a new baseline.
 challenge_evidence = validate_challenges(baseline, CHALLENGE_CONDITIONS, config["replicates"])
@@ -111,6 +134,7 @@ if challenge_path.exists():
 else:
     save_json(challenge_path, {"conditions": CHALLENGE_CONDITIONS, "basis": "development baseline only"})
 print("Frozen challenge:", CHALLENGE_CONDITIONS)
+print("Recurrent texts:", sorted(challenge_evidence.text_id.unique()))
 
 
 
@@ -127,9 +151,11 @@ display(comparison)
 
 # %% Cell 8 - Listen to matched pairs and verify facts, contradictions, and naturalness.
 REVIEW_TEXT_ID = next(x["id"] for x in corpus if x["split"] == "dev" and x["facts"])
+REVIEW_REPLICATE = 0  # repeat this cell with 1, and each critical text ID
+REVIEW_CONDITION = CHALLENGE_CONDITIONS[0]  # also review "clean"
 for variant in ("baseline", "clauses", "repeat", "slow"):
     clips = development[(development.text_id == REVIEW_TEXT_ID) & (development.variant == variant)
-                        & (development.condition == CHALLENGE_CONDITIONS[0]) & (development.replicate == 0)]
+                        & (development.condition == REVIEW_CONDITION) & (development.replicate == REVIEW_REPLICATE)]
     if not clips.empty:
         print(variant, clips.iloc[0].reference_text, "ASR:", clips.iloc[0].transcript)
         display(Audio(filename=clips.iloc[0].audio_path))

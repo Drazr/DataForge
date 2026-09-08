@@ -1,0 +1,41 @@
+{
+  "run_id": "6bd1eb398398af0edcbe31d260e15fa71a6e5aca1c3d9abc117aef7028d71966",
+  "text_id": "critical_01",
+  "audio_path": "/content/drive/MyDrive/DataForge/noise_masking/outputs/6bd1eb398398af0e/preflight_phone.wav",
+  "transcript": "Mira Patel, your Tuesday appointment is at 3.30 p.m. Your payment of $45 is due by May 14th and your reference code is 7294. Do not cancel the appointment.",
+  "fact_recovery": 1.0,
+  "fact_details": {
+    "name": {
+      "recovered": true,
+      "conflict": false
+    },
+    "day": {
+      "recovered": true,
+      "conflict": false
+    },
+    "time": {
+      "recovered": true,
+      "conflict": false
+    },
+    "date": {
+      "recovered": true,
+      "conflict": false
+    },
+    "amount": {
+      "recovered": true,
+      "conflict": false
+    },
+    "code": {
+      "recovered": true,
+      "conflict": false
+    },
+    "negation": {
+      "recovered": true,
+      "conflict": false
+    }
+  },
+  "runtime_models_executed": true,
+  "dnsmos_sig": 3.668778016812354,
+  "dnsmos_bak": 4.179113703130144,
+  "dnsmos_ovrl": 3.4193765791040933
+}
