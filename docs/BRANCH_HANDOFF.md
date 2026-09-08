@@ -1,4 +1,4 @@
-# Three independent workflow branches
+# Two independent workflow branches
 
 ## Current repository layout
 
@@ -8,7 +8,7 @@
 their notebook scripts, dependencies, tests and workflow-specific runbooks remain
 on their respective branches. `RIME_EVIDENCE.md` belongs to `noise-conditioned-ab`.
 
-The three test branches no longer have a prefix; use the exact names below.
+The two test branches have no prefix; use the exact names below.
 For an existing Colab notebook, copy the latest cells from the matching branch.
 Before starting a new run, use a fresh runtime so Cell 2 clones the current branch
 and commit; existing checkouts are intentionally not updated automatically.
@@ -17,21 +17,18 @@ code revisions during a frozen run without checking producer/consumer compatibil
 
 ## Execution and evidence transfer
 
-Active experiments only, in the chosen order: **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**. See the shared documents on `main`: the [roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md) and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged and outside this scope decision.
+Active experiments only, in the chosen order: **Noise-Masking Test → Noise-Conditioned Delivery A/B**. See the shared documents on `main`: the [roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md) and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged and outside this scope decision.
 
-Delivery A/B requires only Noise-Masking outputs; leave its optional Grid input unset. Grid runs last and defaults to the Noise-Masking baseline. To analyze A/B outputs instead, select the completed Delivery A/B source run, `results.csv`, and one split/variant per session. Later Grid findings do not reopen the already frozen A/B candidate or permit tuning on held-out data.
+Delivery A/B requires the complete Noise-Masking output and synthesis cache. It imports the frozen baseline without rerunning it.
 
 | Workflow | Branch | Colab entry file |
 | --- | --- | --- |
 | Noise-Masking Test | noise-masking-test | colab_noise_masking.py |
 | Noise-Conditioned Delivery A/B | noise-conditioned-ab | colab_noise_ab.py |
-| Grid and Breakpoint Analysis | grid-breakpoint-analysis | colab_grid_analysis.py |
 
-Noise Masking produces the baseline. Grid Analysis copies its tables, metadata
-and clips into its own checkout and performs CPU-only analysis. Delivery A/B
+Noise Masking produces the baseline. Delivery A/B
 copies the frozen baseline, scored rows, audio and synthesis cache into its own
 checkout, then evaluates interventions; it does not rerun the development baseline.
-Grid conclusions may also be copied into Delivery A/B for human challenge review.
 The two audio branches include identical shared scoring/audio utilities to preserve
 the producer configuration and evaluation hashes.
 
@@ -48,5 +45,4 @@ automatically uploaded or mixed into another branch while an experiment runs.
 
 Persistent Drive folders under `MyDrive/DataForge/`:
 - `noise_masking/outputs/<run-id>/`: measured baseline and diagnostic exports.
-- `grid_analysis/outputs/<run-id>/<session>/results/`: grid conclusions and links.
 - `delivery_ab/outputs/<run-id>/`: copied baseline plus A/B and held-out evidence.

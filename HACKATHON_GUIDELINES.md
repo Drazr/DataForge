@@ -39,13 +39,12 @@
 
 ## Project scope
 
-The selected path is **Telephony and adverse audio conditions**. The active experimental scope is limited to these three workflows, in this execution order:
+The selected path is **Telephony and adverse audio conditions**. The active experimental scope is limited to these two workflows, in this execution order:
 
 1. **Noise-Masking Test**.
 2. **Noise-Conditioned Delivery A/B**.
-3. **Grid and Breakpoint Analysis**.
 
-The [implementation roadmap](rime_implementation_roadmap.md) and [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md) define this plan; this file remains the submission and compliance reference. Standalone telephone-format, DNSMOS cross-check and streaming-continuity experiments are not part of the selected test plan. Necessary codec/preflight checks and DNSMOS quality guardrails remain inside the selected audio workflows.
+The [implementation roadmap](rime_implementation_roadmap.md) and [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md) define this plan; this file remains the submission and compliance reference. Grid/Breakpoint Analysis was retired after a qualifying stress baseline so the remaining time could be used for the direct Delivery A/B test. Standalone telephone-format, DNSMOS cross-check and streaming-continuity experiments are not part of the selected test plan. Necessary codec/preflight checks and DNSMOS quality guardrails remain inside the selected audio workflows.
 
 This test-scope decision does not select, reject or change any catalog engineering method; that topic is unchanged and outside this update.
 
