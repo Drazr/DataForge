@@ -65,8 +65,12 @@ async function say(page:Page,name:string){
   const bytes=readFileSync(resolve('../evidence/caller-fixtures',name+'.wav')).toString('base64');
   await page.evaluate(async bytes=>await (window as any).__caller.say(bytes),bytes);
 }
+async function evidence(page:Page,s:Session){
+  const response=await page.request.get(`/api/sessions/${s.id}/evidence`,{headers:{Authorization:`Bearer ${s.capability}`}});
+  expect(response.ok()).toBe(true);return response.json();
+}
 async function save(page:Page,s:Session,name:string){
-  const report=await page.request.get(`/api/sessions/${s.id}/evidence`,{headers:{Authorization:`Bearer ${s.capability}`}}).then(r=>r.json());
+  const report=await evidence(page,s);
   const browser=await page.evaluate(async()=>await (window as any).__caller.finish());
   const directory=resolve('../evidence/live',name);mkdirSync(directory,{recursive:true});
   writeFileSync(resolve(directory,'received.webm'),Buffer.from(browser.audio,'base64'));
@@ -78,8 +82,14 @@ for(const mode of ['bypass','normal'])test(`normal confirmation with ${mode} cac
   const s=await begin(page,mode);
   try{
     await expect.poll(async()=>(await state(page,s)).status,{timeout:100_000}).toBe('awaiting_confirmation');
+    expect((await state(page,s)).confirmed).toBe(false);
     await say(page,'yes');
     await expect.poll(async()=>(await state(page,s)).confirmed,{timeout:20_000}).toBe(true);
+    // Confirmation is recorded before its spoken acknowledgment is synthesized.
+    await expect.poll(async()=>{
+      const report=await evidence(page,s);
+      return report.events.some((e:any)=>e.event==='playback_complete'&&e.segment==='acknowledgment');
+    },{timeout:30_000}).toBe(true);
     const {report,browser}=await save(page,s,`normal-${mode}`);
     expect(report.events.filter((e:any)=>e.event==='confirmed')).toHaveLength(1);
     expect(browser.samples.some((sample:any)=>sample.rms>.003)).toBe(true);
@@ -89,20 +99,47 @@ for(const mode of ['bypass','normal'])test(`normal confirmation with ${mode} cac
   }finally{await action(page,s,'end');}
 });
 
+test('repeat after the question replays the requested fact without confirming',async({page})=>{
+  const s=await begin(page);
+  try{
+    await expect.poll(async()=>(await state(page,s)).status,{timeout:100_000}).toBe('awaiting_confirmation');
+    const previousTurn=(await state(page,s)).turn;
+    await say(page,'repeat');
+    await expect.poll(async()=>{
+      const snapshot=await state(page,s);
+      return snapshot.turn>previousTurn&&snapshot.status==='awaiting_confirmation';
+    },{timeout:60_000}).toBe(true);
+    expect((await state(page,s)).confirmed).toBe(false);
+    const {report}=await save(page,s,'repeat');
+    const events=report.events.filter((e:any)=>e.turn>previousTurn);
+    expect(events.filter((e:any)=>e.event==='playback_complete').map((e:any)=>e.segment)).toEqual(['time','question']);
+    expect(report.events.some((e:any)=>e.event==='intent'&&e.intent==='repeat'&&e.detail==='time')).toBe(true);
+    expect(report.events.filter((e:any)=>e.event==='confirmed')).toHaveLength(0);
+  }finally{await action(page,s,'end');}
+});
+
 test('provider failure is disclosed and recovery asks for a fresh confirmation',async({page})=>{
   const s=await begin(page);
   try{
     await expect.poll(async()=>(await state(page,s)).status,{timeout:100_000}).toBe('awaiting_confirmation');
     await action(page,s,'fail_next_synthesis');await say(page,'repeat');
     await expect.poll(async()=>(await state(page,s)).status,{timeout:20_000}).toBe('recovery');
-    await page.waitForTimeout(6000);await action(page,s,'recover');
+    expect((await state(page,s)).confirmed).toBe(false);
+    await expect.poll(async()=>{
+      const report=await evidence(page,s);
+      return report.events.some((e:any)=>e.event==='fallback'&&e.cached_rime===true);
+    },{timeout:30_000}).toBe(true);
+    await action(page,s,'recover');
     await expect.poll(async()=>(await state(page,s)).status,{timeout:100_000}).toBe('awaiting_confirmation');
+    expect((await state(page,s)).confirmed).toBe(false);
     const {report}=await save(page,s,'provider-failure');
+    expect(report.events.some((e:any)=>e.event==='failure'&&e.category==='speech_provider')).toBe(true);
     expect(report.events.some((e:any)=>e.event==='fallback'&&e.cached_rime===true)).toBe(true);
+    expect(report.events.filter((e:any)=>e.event==='confirmed')).toHaveLength(0);
   }finally{await action(page,s,'end');}
 });
 
-test('connection loss keeps the appointment unconfirmed',async({page})=>{
+test('injected connection failure keeps the appointment unconfirmed',async({page})=>{
   const s=await begin(page);
   try{
     await expect.poll(async()=>(await state(page,s)).status,{timeout:100_000}).toBe('awaiting_confirmation');

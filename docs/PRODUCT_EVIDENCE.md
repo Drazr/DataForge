@@ -23,24 +23,29 @@ The claim concerns software state and observed audio behavior. A recognized
 "yes" can still be wrong because of ASR, another speaker, or misunderstanding.
 The product does not prove listener comprehension or speaker identity.
 
-## Frozen acceptance procedure v1
+## Frozen acceptance procedure v2
+
+Version 2 reflects the reduced foundation scope: sequential replies, caching,
+and disclosed fallback. It replaces the previous procedure before any successful
+credentialed measurements have been collected.
 
 1. Run the offline tests and browser error-path checks; all must pass.
 2. Run preflight using the exact final model, speaker, endpoint and transport.
 3. Run the normal scenario with cache bypass, then with cache reuse. Required
    details and question must complete; no confirmation occurs before the fresh
    synthetic affirmative reply. Exactly one confirmation event follows. Received
-   audio must have non-silent samples. Cache provenance must match each mode.
+   audio must have non-silent samples. The spoken acknowledgment must complete
+   before evidence capture. Cache provenance must match each mode.
 4. After the confirmation question, inject the spoken "repeat the time"
    fixture. Require the requested fact and a new confirmation question while
    the appointment remains unconfirmed.
 5. Inject a provider failure on the next synthesis, including cache-hit paths.
    Require a recovery state, no confirmation, and the cached Rime disclosure.
    Explicit recovery must play a fresh confirmation question.
-6. Disconnect connectivity, explicitly record connection loss through the same
-   browser control API, and require recovery with confirmation eligibility
-   cleared. This is a combined transport/fault-injection scenario, not a proof
-   of a particular network outage-detection time.
+6. Inject a connection-failure action through the browser control API and
+   require recovery with confirmation eligibility cleared. This verifies the
+   failure-handling policy; it does not simulate a network outage or measure
+   transport failure detection.
 
 Scenarios live in `web/tests-live`. Run from the product root:
 
@@ -63,8 +68,8 @@ and event files are not evidence of a new successful run by themselves.
 
 ## Evidence integrity and limitations
 
-- Preserve procedure v1 when recording the first measurements. Changes to the
-  bound or scenarios require a new version and explanation, never retroactive
+- Preserve procedure v2 when recording the first measurements. Changes to the
+  scenarios require a new version and explanation, never retroactive
   relabeling of a failed run.
 - Include Git commit, dependency locks, provider configuration, catalog hash,
   configured LiveKit project endpoint and actual region when available in the

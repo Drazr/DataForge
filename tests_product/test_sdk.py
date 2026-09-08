@@ -30,6 +30,28 @@ async def test_agent_routes_finalized_turn_to_interpreter_and_suppresses_llm():
     assert received[0][1]
 
 
+@pytest.mark.parametrize('onset,confirmed',[(None,False),(9.0,False),(11.0,True)])
+async def test_finalized_sdk_timestamps_preserve_confirmation_gate(onset,confirmed):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock, Mock
+    from test_core import play
+    controller=Controller(clock=lambda:10.0)
+    play(controller,controller.start())
+    playback=SimpleNamespace(speak=AsyncMock(return_value=True),cancel=Mock(),fallback=AsyncMock(return_value=False))
+    runtime=Runtime(controller,playback)
+    agent=worker.GuidedAgent(SimpleNamespace(runtime=runtime))
+    message=llm.ChatMessage(role='user',content=['Yes, I confirm.'],
+                            metrics={} if onset is None else {'started_speaking_at':onset})
+    try:
+        with pytest.raises(StopResponse):
+            await agent.on_user_turn_completed(llm.ChatContext(),message)
+        if runtime.task:
+            await runtime.task
+        assert controller.confirmed is confirmed
+    finally:
+        await runtime.close()
+
+
 async def test_actual_agent_session_plays_supplied_pcm_without_tts_or_llm():
     from livekit.agents import Agent
     from livekit.agents.voice import io

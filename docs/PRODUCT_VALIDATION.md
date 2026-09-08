@@ -4,11 +4,11 @@ Validation of the product foundation, independent of unfinished experiments:
 
 | Check | Result |
 |---|---|
-| Python controller, runtime, cache, Rime adapter, SDK, local API and evidence-status checks | 52 passed |
+| Python controller, runtime, cache, Rime adapter, SDK, local API and evidence-status checks | 55 passed |
 | Browser setup failures, expired sessions, startup cancellation, mobile width and optional tool checks | 7 passed |
 | TypeScript check | Passed |
 | Frontend production build | Passed |
-| Live acceptance scenario discovery | 4 scenarios found |
+| Live acceptance scenario discovery | 5 scenarios found (procedure v2) |
 | Rime public catalog | Coda / Astra / English present when checked |
 | Real credentialed voice verification | **Unverified: credentials missing** |
 
@@ -25,6 +25,13 @@ Review fixes were checked on 8 September 2026. Regression coverage includes
 sequential playback, ignored overlapping replies, failed and concurrent worker
 cleanup, and interrupted evidence runs. Browser checks verify replacement of expired
 sessions and cancellation during both worker creation and audio connection.
+
+The follow-up review verified that finalized SDK input timestamps preserve the
+confirmation gate for fresh, early and missing-onset replies. Live procedure v2
+now waits for completed acknowledgment/fallback playback, checks a successful
+sequential repeat, and explicitly labels injected connection failures. The
+revised live scenarios pass discovery and TypeScript checks; their provider
+behavior remains unverified without credentials.
 
 The live command generated an ignored local `evidence/live-status.json` with
 `status: unverified` and the missing credential names. No API key values,
