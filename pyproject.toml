@@ -1,0 +1,3 @@
+[tool.pytest.ini_options]
+testpaths = ["tests_product"]
+asyncio_mode = "auto"

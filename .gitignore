@@ -17,3 +17,7 @@ models/
 
 
 .branch-workspaces/
+node_modules/
+.product-cache/
+evidence/
+test-results/
