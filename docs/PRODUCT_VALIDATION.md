@@ -4,11 +4,11 @@ Validation of the product foundation, independent of unfinished experiments:
 
 | Check | Result |
 |---|---|
-| Python controller, runtime, cache, Rime adapter, SDK, local API and evidence-status checks | 55 passed |
+| Python controller, runtime, cache, Rime adapter, SDK, local API and evidence-status checks | 52 passed |
 | Browser setup failures, expired sessions, startup cancellation, mobile width and optional tool checks | 7 passed |
 | TypeScript check | Passed |
 | Frontend production build | Passed |
-| Live acceptance scenario discovery | 5 scenarios found |
+| Live acceptance scenario discovery | 4 scenarios found |
 | Rime public catalog | Coda / Astra / English present when checked |
 | Real credentialed voice verification | **Unverified: credentials missing** |
 
@@ -22,9 +22,8 @@ Starlette/httpx test client. The build reports a large client bundle warning
 from the voice UI dependencies. Neither prevented the corresponding checks.
 
 Review fixes were checked on 8 September 2026. Regression coverage includes
-speech longer than the silence interval, VAD turns without a transcript, late
-errors from cancelled playback, failed and concurrent worker cleanup, and
-interrupted evidence runs. Browser checks verify replacement of expired
+sequential playback, ignored overlapping replies, failed and concurrent worker
+cleanup, and interrupted evidence runs. Browser checks verify replacement of expired
 sessions and cancellation during both worker creation and audio connection.
 
 The live command generated an ignored local `evidence/live-status.json` with

@@ -36,7 +36,8 @@ class GuidedAgent(Agent):
         self.worker = worker
 
     async def on_user_turn_completed(self, turn_ctx, new_message):
-        self.worker.runtime.transcript(new_message.text_content or '')
+        self.worker.runtime.transcript(new_message.text_content or '', new_message.id,
+                                       new_message.metrics.get('started_speaking_at', 0))
         raise StopResponse()
 
 
@@ -47,7 +48,7 @@ class VoiceWorker:
         self.identity = 'caller-' + session_id
         self.created_at = time.monotonic()
         self.config = SpeechConfig.from_env()
-        self.controller = Controller(interpreter=make_interpreter(os.getenv('DATAFORGE_INTERPRETER', 'guided')))
+        self.controller = Controller(interpreter=make_interpreter(os.getenv('DATAFORGE_INTERPRETER', 'guided')), clock=time.time)
         self.room = rtc.Room()
         self.http = None
         self.session = None
@@ -84,19 +85,11 @@ class VoiceWorker:
             stt=self._recognition, vad=silero.VAD.load(), llm=None, tts=None,
             user_away_timeout=None,
             turn_handling={'turn_detection': 'vad',
-                           'endpointing': {'min_delay': .5, 'max_delay': 3},
-                           'interruption': {'mode': 'vad', 'enabled': True, 'min_duration': .2,
-                                            'resume_false_interruption': False},
+                           'interruption': {'enabled': False,
+                                            'discard_audio_if_uninterruptible': True},
                            'preemptive_generation': {'enabled': False}},
             conn_options=SessionConnectOptions(stt_conn_options=APIConnectOptions(max_retry=0, timeout=15)))
         self.runtime = Runtime(self.controller, LivePlayback(self.session, self.audio))
-
-        @self.session.on('user_state_changed')
-        def state(event):
-            if event.new_state == 'speaking':
-                self.runtime.speech_started()
-            elif event.old_state == 'speaking':
-                self.runtime.speech_stopped()
 
         @self.session.on('error')
         def error(event):

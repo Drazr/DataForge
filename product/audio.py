@@ -67,14 +67,14 @@ class LivePlayback:
 
     async def play(self, text, data):
         handle = self.session.say(text, audio=pcm_frames(data, self.audio.config.sample_rate),
-                                  allow_interruptions=True, add_to_chat_ctx=False)
+                                  allow_interruptions=False, add_to_chat_ctx=False)
         self.audio.emit('playback_submitted', bytes=len(data), duration_s=len(data)/(2*self.audio.config.sample_rate))
         self.handle = handle
         try:
             await handle.wait_for_playout()
             if handle.exception():
                 raise RuntimeError('Audio playback failed') from handle.exception()
-            self.audio.emit('playback_finished', interrupted=handle.interrupted)
+            self.audio.emit('playback_finished', complete=not handle.interrupted)
             return not handle.interrupted
         finally:
             if self.handle is handle:
@@ -86,7 +86,7 @@ class LivePlayback:
 
     def cancel(self):
         if self.handle and not self.handle.done():
-            self.handle.interrupt()
+            self.handle.interrupt(force=True)
         self.handle = None
 
     async def fallback(self):

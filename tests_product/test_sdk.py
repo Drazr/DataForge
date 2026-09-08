@@ -12,7 +12,7 @@ from product.runtime import Runtime
 async def test_vad_and_sdk_options_construct():
     vad = silero.VAD.load()
     session = AgentSession(stt=None, llm=None, tts=None, vad=vad,
-                           turn_handling={'turn_detection':'vad','interruption':{'mode':'vad','resume_false_interruption':False},'preemptive_generation':{'enabled':False}},
+                           turn_handling={'turn_detection':'vad','interruption':{'enabled':False,'discard_audio_if_uninterruptible':True},'preemptive_generation':{'enabled':False}},
                            conn_options=SessionConnectOptions(stt_conn_options=APIConnectOptions(max_retry=0)))
     assert session is not None
 
@@ -20,13 +20,14 @@ async def test_vad_and_sdk_options_construct():
 async def test_agent_routes_finalized_turn_to_interpreter_and_suppresses_llm():
     received=[]
     class RuntimeStub:
-        def transcript(self,text): received.append(text)
+        def transcript(self,text,input_id,started_at): received.append((text,input_id,started_at))
     class WorkerStub:
         runtime=RuntimeStub()
     agent=worker.GuidedAgent(WorkerStub())
     with pytest.raises(StopResponse):
         await agent.on_user_turn_completed(llm.ChatContext(),llm.ChatMessage(role='user',content=['repeat the time']))
-    assert received == ['repeat the time']
+    assert received[0][0] == 'repeat the time'
+    assert received[0][1]
 
 
 async def test_actual_agent_session_plays_supplied_pcm_without_tts_or_llm():

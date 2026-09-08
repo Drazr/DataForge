@@ -14,9 +14,9 @@ catalog validation; this is not equivalent to successfully synthesizing speech.
 
 ## Engineering claim to verify
 
-DataForge preserves unfinished appointment details across interruptions and
-failures, and confirms only after complete delivery of the required details and
-question followed by a fresh explicit affirmative utterance. Its interpretation
+DataForge remains unconfirmed through provider and connection failures, and
+confirms only after complete delivery of the required details and question
+followed by a fresh explicit affirmative utterance. Its interpretation
 contract can later accept an LLM without transferring state-changing authority.
 
 The claim concerns software state and observed audio behavior. A recognized
@@ -31,18 +31,13 @@ The product does not prove listener comprehension or speaker identity.
    details and question must complete; no confirmation occurs before the fresh
    synthetic affirmative reply. Exactly one confirmation event follows. Received
    audio must have non-silent samples. Cache provenance must match each mode.
-4. Inject the spoken "repeat the time" fixture during audible output. Require
-   100 ms of received quiet within **1500 ms of fixture onset**. This is a
-   provisional product engineering bound chosen before measurements, unrelated
-   to the unfinished noise experiments. Report the observed value and fixture
-   onset definition; do not call it human interruption response time.
-5. The interrupted flow must recognize a time-repeat intent and reach a new
-   confirmation question while still unconfirmed. Offline tests additionally
-   prove old callbacks cannot advance the cancelled turn.
-6. Inject a provider failure on the next synthesis, including cache-hit paths.
+4. After the confirmation question, inject the spoken "repeat the time"
+   fixture. Require the requested fact and a new confirmation question while
+   the appointment remains unconfirmed.
+5. Inject a provider failure on the next synthesis, including cache-hit paths.
    Require a recovery state, no confirmation, and the cached Rime disclosure.
    Explicit recovery must play a fresh confirmation question.
-7. Interrupt connectivity, explicitly record connection loss through the same
+6. Disconnect connectivity, explicitly record connection loss through the same
    browser control API, and require recovery with confirmation eligibility
    cleared. This is a combined transport/fault-injection scenario, not a proof
    of a particular network outage-detection time.

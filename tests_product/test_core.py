@@ -37,21 +37,13 @@ def test_confirmation_requires_completed_playback_and_fresh_input():
     assert sum(e['event'] == 'confirmed' for e in c.events) == 1
 
 
-def test_interruption_invalidates_old_callbacks_and_preserves_fact():
+def test_repeat_replays_requested_fact_after_question():
     c = Controller()
-    segments = c.start()
-    play(c, segments[:1])
-    current = segments[1]
-    generation = c.generation
-    c.begin(current, generation)
-    c.interrupt()
-    assert c.progress['time'] == 'pending'
-    assert not c.complete(current, generation)
-    assert not c.begin(segments[2], generation)
-    repeat = c.receive('repeat the time', 'one', c.clock())
-    assert repeat[0].text == current.text
-    play(c, repeat)
-    assert all(p == 'complete' for p in c.progress.values())
+    play(c, c.start())
+    repeated = c.receive('repeat the time', 'one', c.clock())
+    assert [segment.id for segment in repeated] == ['time', 'question']
+    play(c, repeated)
+    assert c.status == 'awaiting_confirmation'
 
 
 @pytest.mark.parametrize('reply', ['yes', '', 'something unexpected'])

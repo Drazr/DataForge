@@ -167,12 +167,12 @@ export default function Home() {
 
   return <main className="shell">
     <header className="topbar"><a className="brand" href="/">dataforge<span>VOICE</span></a><span className="tag">LOCAL DEMO · SYNTHETIC APPOINTMENT</span></header>
-    <div className="intro"><p className="eyebrow">ONE CONVERSATION. EVERY DETAIL.</p><h1>Let’s confirm<br/>your appointment.</h1><p>Listen, interrupt, ask again. We’ll keep your place.</p></div>
+    <div className="intro"><p className="eyebrow">ONE CONVERSATION. EVERY DETAIL.</p><h1>Let’s confirm<br/>your appointment.</h1><p>Listen to the details, then confirm or ask again.</p></div>
     <div className="workspace"><section className="conversation" aria-label="Voice conversation">
       <div className="section-label"><span className="status-dot"/>{busy?'Connecting voice…':statusLabels[state]??state}<span>01 / CONVERSATION</span></div>
       <div className={`voice-circle ${snapshot?.current_text?'active':''}`}><Headphones size={52} strokeWidth={1.4}/></div>
       <h2>{snapshot?.confirmed?'You’re all set.':state==='ended'?'Your session has ended.':'A little clarity goes a long way.'}</h2>
-      <p>{snapshot?.confirmed?'Your practice appointment is confirmed.':<>Hear the time, location, and reference code.<br/>Say “repeat the time” whenever you need to.</>}</p>
+      <p>{snapshot?.confirmed?'Your practice appointment is confirmed.':<>Hear the time, location, and reference code.<br/>Wait for the question, then reply or ask for a repeat.</>}</p>
       {(!room||terminal)&&<Button className="primary" disabled={busy||!health?.configured} onClick={start}><Headphones size={18}/>{session?'Start a new session':'Start voice session'}<ArrowUpRight size={18}/></Button>}
       {(room||busy)&&<div className="controls">{room&&!terminal&&<Button variant="outline" className="secondary" onClick={mute} disabled={busy}>{muted?<MicOff size={18}/>:<Mic size={18}/>} {muted?'Unmute':'Mute'}</Button>}<Button variant="outline" className="secondary" onClick={()=>void end().catch(e=>setError(e.message))}><PhoneOff size={18}/> End session</Button></div>}
       {state==='recovery'&&<Button className="primary" disabled={busy} onClick={recover}>Retry connection</Button>}

@@ -51,12 +51,9 @@ This test-scope decision does not select, reject or change any catalog engineeri
 
 ## Catalog engineering methods
 
-These are compatible, low-data-engineering additions when useful to the product:
+The product foundation selects these low-data-engineering additions:
 
-- interruptible playback;
 - disclosed offline/fallback handling;
-- LiveKit turn-taking and telephony transport;
-- outbound-call handling;
 - lightweight phrase/audio caching.
 
 Integrate only methods used in the working flow, and document their behavior and any effect on evidence measurements.

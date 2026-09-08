@@ -1,8 +1,8 @@
 # DataForge — voice appointment confirmation
 
-A local browser voice product with a guided conversation, Rime speech, interruption-aware progress, explicit confirmation, observable recovery, and verified audio reuse. It uses synthetic appointments only: no real booking is created or changed.
+A local browser voice product with a guided conversation, Rime speech, explicit confirmation, observable fallback behavior, and verified audio reuse. It uses synthetic appointments only: no real booking is created or changed.
 
-This is the `codex/product-foundation` branch. The three unfinished experiment branches remain independent. Product behavior does not interpret their interim results or automatically adapt to noise. Shared [hackathon guidelines](HACKATHON_GUIDELINES.md), [experiment roadmap](rime_implementation_roadmap.md), [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md), and [handoff guide](docs/BRANCH_HANDOFF.md) remain available.
+This is the `product-foundation` branch. The three unfinished experiment branches remain independent. Product behavior does not interpret their interim results or automatically adapt to noise. Shared [hackathon guidelines](HACKATHON_GUIDELINES.md), [experiment roadmap](rime_implementation_roadmap.md), [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md), and [handoff guide](docs/BRANCH_HANDOFF.md) remain available.
 
 ## Run locally
 
@@ -35,6 +35,10 @@ Open http://127.0.0.1:3000 and select **Start voice session**. Allow microphone 
 
 No hosted deployment or SIP setup is required. The Python service owns the voice workers in the same process; run one Uvicorn process because session state is in memory. Sessions expire after 20 minutes. Up to four active sessions are accepted. Stop both terminal processes to end the local application.
 
+The selected catalog methods for this foundation are disclosed fallback handling
+and content-specific phrase/audio caching. Other catalog methods are outside this
+branch's product behavior.
+
 ## Conversation behavior
 
 The assistant reads the appointment time (including date and timezone), location, and reference code, then asks for confirmation. Supported phrases include:
@@ -45,9 +49,9 @@ The assistant reads the appointment time (including date and timezone), location
 - “Repeat the time”, “Say the reference code again”, “What is the location?”
 - “Stop”, “End the session”, “Goodbye.”
 
-Polite prefixes and suffixes are accepted. Mixed, conditional, unsupported, or ambiguous requests trigger clarification. Two unanswered/unclear prompts end the session unconfirmed; a listening timeout is 15 seconds. These are product defaults, not outcomes of the noise experiments.
+Polite prefixes and suffixes are accepted. Mixed, conditional, unsupported, or ambiguous requests trigger clarification. Two unclear replies end the session unconfirmed. These are product defaults, not outcomes of the noise experiments.
 
-Confirmation requires all required details and the confirmation question to finish playing, then a fresh affirmative utterance. Speech onset is used rather than the later arrival time of its transcript. Interrupted details restart from the beginning when requested. Playback completion is a sender-side event and is not a claim that someone heard or understood the audio.
+Confirmation requires all required details and the confirmation question to finish playing, then a fresh affirmative utterance. Replies received while the assistant is playing audio are discarded. Playback completion is a sender-side event and is not a claim that someone heard or understood the audio.
 
 ## Architecture and extension points
 
@@ -61,7 +65,7 @@ Browser microphone -> LiveKit WebRTC -> Silero VAD + Deepgram Nova-3 STT
 
 `DeliveryPlanner` uses fixed templates with stable fact identifiers. A future validated delivery profile can replace that planner without changing confirmation authority. No experiment caches, results, datasets, or thresholds are loaded by this product.
 
-`product/runtime.py` cancels pending synthesis/playback and invalidates old turn callbacks. `product/worker.py` binds that runtime to a real LiveKit AgentSession. `product/server.py` supplies room-scoped tokens and capability-protected local session controls; there is deliberately no text-confirmation API. `web` is the Sites/Vinext frontend with LiveKit React components.
+`product/runtime.py` delivers one segment at a time and owns failure recovery and shutdown. `product/worker.py` binds that runtime to a LiveKit AgentSession with overlapping caller audio disabled. `product/server.py` supplies room-scoped tokens and capability-protected local session controls; there is deliberately no text-confirmation API. `web` is the Sites/Vinext frontend with LiveKit React components.
 
 ## Provider and audio configuration
 
@@ -74,7 +78,7 @@ Browser microphone -> LiveKit WebRTC -> Silero VAD + Deepgram Nova-3 STT
 | Delivery | `time_scale_factor=1.0`, fixed templates `plain-v1` |
 | Transport | browser LiveKit WebRTC/Opus; no simulated PCMU conversion |
 | Recognition | LiveKit Inference `deepgram/nova-3`, English |
-| Turn handling | Silero VAD; fixed endpointing 0.5–3 s; interruption duration 0.2 s; no automatic resume |
+| Turn handling | Silero VAD; caller replies are accepted after assistant playback |
 | Browser input | echo cancellation on, noise suppression and automatic gain off |
 
 LiveKit region depends on the configured project and network placement. Session evidence records the configured URL/region metadata when available; do not claim a fixed region from browser tests. Revalidate the exact deployment configuration before the final demo.
@@ -85,7 +89,7 @@ Rime audio is buffered to completion before playback so only complete output ent
 
 - **Rime failure:** one synthesis attempt; enter recovery. Use a previously generated Rime status phrase if available, visibly labeled through failure state and exported provenance. No silent provider substitution or hidden paid retry.
 - **Recognition failure:** leave unconfirmed; end and start a fresh session to recreate the STT stream.
-- **Connection loss:** clear confirmation eligibility, preserve unfinished details, and require a new confirmation prompt after explicit recovery.
+- **Connection loss:** clear confirmation eligibility and require the full details plus a new confirmation prompt after explicit recovery.
 - **Failure after confirmation:** preserve the already recorded acknowledgment and report the later failure; do not invent a second outcome.
 
 Recovery is limited, not full offline operation. The worker keeps state/events in memory. Synthetic PCM cache entries are ignored under `.product-cache`. Evidence is written only by explicit export or verification commands; `.env`, caches, recordings, and local test outputs are ignored by Git.
