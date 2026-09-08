@@ -59,3 +59,16 @@ two noise sources, two repeats, DNSMOS retained, and a required T4 GPU ASR
 evaluator. This is 210 scores, while prior raw speech is reused from the
 compatible synthesis cache. If no condition has two distinct repeated losses,
 A/B and Grid are both inapplicable; if it does, run A/B and defer Grid.
+
+## Completed stress-baseline handoff
+
+The user completed run `6bd1eb398398af0e` and supplied its Cell 10 ZIP. All 210
+scores are present and Cell 10 made zero format corrections. The condition
+`competing_speech_-5dB` has three recurrent texts: `critical_01` (time/date),
+`critical_03` (code), and `critical_05` (time). Fact recovery is 95.92% clean and
+71.43% for that challenge. This supersedes the earlier baseline's ineligibility.
+
+The A/B branch now contains the copied review evidence and prefilled handoff
+settings. Its Cell 4 copies the complete original run and source synthesis cache
+from shared Drive. The review ZIP alone omits that cache and some audio. Human
+listening is still pending; no A/B or held-out outcome has been claimed.
