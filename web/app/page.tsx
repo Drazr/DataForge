@@ -4,7 +4,18 @@ import { Headphones, ArrowUpRight, CalendarDays, ShieldCheck, Mic, MicOff, Phone
 import { Room, RoomEvent } from 'livekit-client';
 import { RoomContext, RoomAudioRenderer, StartAudio } from '@livekit/components-react';
 import { Button } from '@/components/ui/button';
-import { request, statusLabels, type Session, type Snapshot, type Health } from '@/lib/product';
+import { ApiError, request, statusLabels, type Session, type Snapshot, type Health } from '@/lib/product';
+
+type Connection = {room:Room|null;session:Session|null};
+async function release({room,session}:Connection):Promise<Snapshot|undefined> {
+  const results=await Promise.allSettled([
+    room?.disconnect(),
+    session?request<Snapshot>(`/api/sessions/${session.id}/action`,session,{action:'end'},true):undefined,
+  ]);
+  const response=results[1];
+  if(response.status==='fulfilled')return response.value;
+  if(!(response.reason instanceof ApiError&&response.reason.status===404))throw response.reason;
+}
 
 export default function Home() {
   const [health, setHealth] = useState<Health|null>(null);
@@ -14,20 +25,33 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState('');
-  const current = useRef<{room:Room|null;session:Session|null}>({room:null,session:null});
-  const closing = useRef(false);
+  const current = useRef<Connection>({room:null,session:null});
+  const generation = useRef(0);
   const busyRef = useRef(false);
   const state = snapshot?.status ?? 'ready';
   const terminal = state === 'confirmed' || state === 'ended';
   const appointment = snapshot?.appointment ?? health?.appointment;
 
+  // Detach immediately: remote teardown must never keep a stale session active.
+  const detach = useCallback(()=>{
+    const previous=current.current;
+    current.current={room:null,session:null};generation.current++;
+    busyRef.current=false;setBusy(false);setRoom(null);
+    setSnapshot(value=>value?{...value,status:value.confirmed?'confirmed':'ended',current_text:''}:value);
+    return previous;
+  },[]);
+
   useEffect(()=>{
-    if(terminal&&room)void room.localParticipant.setMicrophoneEnabled(false).then(()=>setMuted(true)).catch(()=>{});
+    if(terminal&&room)void room.localParticipant.setMicrophoneEnabled(false).then(()=>{if(current.current.room===room)setMuted(true);}).catch(()=>{});
   },[terminal,room]);
 
   useEffect(()=>{
     request<Health>('/api/health').then(setHealth).catch(()=>setError('The local voice worker is not running. Start it, then reload this page.'));
-    return ()=> {closing.current=true; void current.current.room?.disconnect();};
+    return ()=> {
+      const previous=current.current;
+      generation.current++;current.current={room:null,session:null};busyRef.current=false;
+      void release(previous).catch(()=>{});
+    };
   },[]);
 
   useEffect(()=>{
@@ -35,73 +59,94 @@ export default function Home() {
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async()=> {
-      try {const next=await request<Snapshot>(`/api/sessions/${session.id}`,session); if(active)setSnapshot(next);}
-      catch(e){if(active)setError((e as Error).message);}
+      if(current.current.session!==session)return;
+      try {const next=await request<Snapshot>(`/api/sessions/${session.id}`,session); if(active&&current.current.session===session)setSnapshot(next);}
+      catch(e){
+        if(active&&current.current.session===session){
+          setError((e as Error).message);
+          if(e instanceof ApiError&&e.status===404){active=false;void release(detach()).catch(()=>{});}
+        }
+      }
       if(active)timer=setTimeout(poll,500);
     };
     void poll();
     return ()=>{active=false;clearTimeout(timer);};
-  },[session]);
+  },[session,detach]);
 
   const action = useCallback(async(name:string)=>{
     const s=current.current.session;
     if(!s)throw new Error('Start a voice session first.');
     const next=await request<Snapshot>(`/api/sessions/${s.id}/action`,s,{action:name});
-    setSnapshot(next);return next;
+    if(current.current.session===s)setSnapshot(next);return next;
   },[]);
 
   const end = useCallback(async()=>{
-    closing.current=true;
-    try {if(current.current.session)await action('end');}
-    finally {await current.current.room?.disconnect();current.current.room=null;setRoom(null);}
-  },[action]);
+    const previous=detach(),epoch=generation.current;
+    try{
+      const next=await release(previous);
+      if(next&&generation.current===epoch)setSnapshot(next);
+    }catch(e){if(generation.current===epoch)throw e;}
+  },[detach]);
 
   const start = useCallback(async()=>{
     if(busyRef.current)return;
+    void release(detach()).catch(()=>{});
+    const epoch=generation.current;
     busyRef.current=true;setBusy(true);setError('');
     let next:Session|null=null;
     const connection=new Room({adaptiveStream:true,dynacast:true});
+    const isCurrent=()=>generation.current===epoch;
+    const checkCurrent=()=>{if(!isCurrent())throw new Error('Session ended.');};
     try {
-      if(current.current.session)await end();
-      closing.current=false;
       next=await request<Session>('/api/sessions',null,{});
+      checkCurrent();
       current.current={room:connection,session:next};setSession(next);setSnapshot(next.snapshot);setRoom(connection);
       connection.on(RoomEvent.Reconnecting,()=>{
-        if(!closing.current)void action('connection_lost').catch(e=>setError(e.message));
+        if(isCurrent())void action('connection_lost').catch(e=>{if(isCurrent())setError(e.message);});
       });
       connection.on(RoomEvent.Disconnected,()=>{
-        if(!closing.current){setError('Audio disconnected. Your session needs recovery before it can continue.');void action('connection_lost').catch(()=>{});}
+        if(isCurrent()){setError('Audio disconnected. Your session needs recovery before it can continue.');void action('connection_lost').catch(()=>{});}
       });
-      connection.on(RoomEvent.MediaDevicesError,()=>setError('Microphone access failed. Check your browser permissions.'));
+      connection.on(RoomEvent.MediaDevicesError,()=>{if(isCurrent())setError('Microphone access failed. Check your browser permissions.');});
       await connection.connect(next.url,next.token);
+      checkCurrent();
       await connection.startAudio();
+      checkCurrent();
       await connection.localParticipant.setMicrophoneEnabled(true,{echoCancellation:true,noiseSuppression:false,autoGainControl:false});
+      checkCurrent();
       setMuted(false);
       await action('start');
     } catch(e) {
-      setError((e as Error).message);closing.current=true;
-      if(next)await request(`/api/sessions/${next.id}/action`,next,{action:'end'}).catch(()=>{});
-      await connection.disconnect();setRoom(null);current.current.room=null;
-    } finally {busyRef.current=false;setBusy(false);}
-  },[action,end]);
+      if(isCurrent()){setError((e as Error).message);detach();}
+      await release({room:connection,session:next}).catch(()=>{});
+    } finally {if(isCurrent()){busyRef.current=false;setBusy(false);}}
+  },[action,detach]);
 
   const mute = async()=>{
-    try {if(room){await room.localParticipant.setMicrophoneEnabled(muted);setMuted(!muted);}}
+    try {if(room){await room.localParticipant.setMicrophoneEnabled(muted);if(current.current.room===room)setMuted(!muted);}}
     catch {setError('The microphone could not be changed.');}
   };
   const recover = async()=>{
     if(busyRef.current)return;
+    const epoch=generation.current;
+    const checkCurrent=()=>{if(generation.current!==epoch)throw new Error('Session ended.');};
     busyRef.current=true;setBusy(true);setError('');
     try {
       const s=current.current.session,r=current.current.room;
-      if(s&&r&&r.state==='disconnected'){await r.connect(s.url,s.token);await r.startAudio();await r.localParticipant.setMicrophoneEnabled(true,{echoCancellation:true,noiseSuppression:false,autoGainControl:false});setMuted(false);}
+      if(s&&r&&r.state==='disconnected'){
+        await r.connect(s.url,s.token);checkCurrent();
+        await r.startAudio();checkCurrent();
+        await r.localParticipant.setMicrophoneEnabled(true,{echoCancellation:true,noiseSuppression:false,autoGainControl:false});checkCurrent();
+        setMuted(false);
+      }
+      checkCurrent();
       await action('recover');
-    }catch(e){setError((e as Error).message);}
-    finally{busyRef.current=false;setBusy(false);}
+    }catch(e){if(generation.current===epoch)setError((e as Error).message);}
+    finally{if(generation.current===epoch){busyRef.current=false;setBusy(false);}}
   };
   const exportEvidence = async()=>{
     try{
-      const s=current.current.session;if(!s)return;
+      const s=session;if(!s)return;
       const data=await request(`/api/sessions/${s.id}/evidence`,s);
       const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
       const link=document.createElement('a');link.href=url;link.download=`dataforge-${s.id}.json`;link.click();URL.revokeObjectURL(url);
@@ -129,7 +174,7 @@ export default function Home() {
       <h2>{snapshot?.confirmed?'You’re all set.':state==='ended'?'Your session has ended.':'A little clarity goes a long way.'}</h2>
       <p>{snapshot?.confirmed?'Your practice appointment is confirmed.':<>Hear the time, location, and reference code.<br/>Say “repeat the time” whenever you need to.</>}</p>
       {(!room||terminal)&&<Button className="primary" disabled={busy||!health?.configured} onClick={start}><Headphones size={18}/>{session?'Start a new session':'Start voice session'}<ArrowUpRight size={18}/></Button>}
-      {room&&<div className="controls">{!terminal&&<Button variant="outline" className="secondary" onClick={mute} disabled={busy}>{muted?<MicOff size={18}/>:<Mic size={18}/>} {muted?'Unmute':'Mute'}</Button>}<Button variant="outline" className="secondary" onClick={()=>void end().catch(e=>setError(e.message))}><PhoneOff size={18}/> End session</Button></div>}
+      {(room||busy)&&<div className="controls">{room&&!terminal&&<Button variant="outline" className="secondary" onClick={mute} disabled={busy}>{muted?<MicOff size={18}/>:<Mic size={18}/>} {muted?'Unmute':'Mute'}</Button>}<Button variant="outline" className="secondary" onClick={()=>void end().catch(e=>setError(e.message))}><PhoneOff size={18}/> End session</Button></div>}
       {state==='recovery'&&<Button className="primary" disabled={busy} onClick={recover}>Retry connection</Button>}
       <p className="fine">{muted?'Microphone muted. Unmute to answer.':'Microphone access is needed to speak.'}</p>
       <output aria-live="polite">{snapshot?.confirmed?'No real booking has been changed.':state==='ended'?'Your appointment was not confirmed.':state==='recovery'?'Service interrupted. Your appointment remains unconfirmed.':!health?.configured?'Voice setup is needed before you can begin. Open connection details below.':'Your appointment is not confirmed yet.'}</output>

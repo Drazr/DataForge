@@ -59,6 +59,13 @@ an overall `evidence/live-status.json`. It uses real billed providers once
 credentials are configured. Browser-generated microphone input and synthetic
 caller speech do not substitute for human listening review.
 
+Each live command replaces the overall status with `running` before preflight,
+and records a unique run ID, stage and timestamps. Failed fixture generation,
+browser-launch failures and interrupted runs cannot leave an earlier `passed`
+status in place. Missing credentials produce `unverified`; a force-killed run
+may remain `running`, which is not a successful verification. Existing audio
+and event files are not evidence of a new successful run by themselves.
+
 ## Evidence integrity and limitations
 
 - Preserve procedure v1 when recording the first measurements. Changes to the

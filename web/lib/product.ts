@@ -3,8 +3,13 @@ export type Snapshot = { status: string; confirmed: boolean; progress: Record<st
 export type Session = { id: string; capability: string; token: string; url: string; snapshot: Snapshot };
 export type Health = { configured: boolean; missing: string[]; speech: Record<string,unknown>; appointment: Appointment; test_mode: boolean };
 
-export async function request<T>(path: string, session?: Session|null, action?: unknown): Promise<T> {
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) { super(message); }
+}
+
+export async function request<T>(path: string, session?: Session|null, action?: unknown, keepalive = false): Promise<T> {
   const response = await fetch(path, {
+    keepalive,
     method: action === undefined ? 'GET' : 'POST',
     headers: { ...(session ? {Authorization: `Bearer ${session.capability}`} : {}),
       ...(action === undefined ? {} : {'Content-Type': 'application/json'}) },
@@ -12,7 +17,7 @@ export async function request<T>(path: string, session?: Session|null, action?: 
   });
   if (!response.ok) {
     const error = await response.json().catch(()=>({})) as {detail?:unknown};
-    throw new Error(typeof error.detail === 'string' ? error.detail : 'The voice worker could not complete that request.');
+    throw new ApiError(typeof error.detail === 'string' ? error.detail : 'The voice worker could not complete that request.', response.status);
   }
   return response.json();
 }

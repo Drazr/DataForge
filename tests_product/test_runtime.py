@@ -80,3 +80,55 @@ async def test_silence_closes_after_two_prompts():
             break
     assert c.status == 'ended' and c.unanswered == 2
     await r.close()
+
+
+async def test_active_speech_is_not_counted_as_an_unanswered_prompt():
+    c, p = Controller(), Playback()
+    play(c, c.start())
+    r = Runtime(c, p, silence_seconds=.01)
+    try:
+        r.speech_started()
+        await asyncio.sleep(.04)
+        assert c.unanswered == 0
+        assert p.spoken == []
+    finally:
+        await r.close()
+
+
+async def test_speech_without_transcript_times_out_only_after_speech_stops():
+    c, p = Controller(), Playback()
+    play(c, c.start())
+    r = Runtime(c, p, silence_seconds=.01)
+    try:
+        r.speech_started()
+        r.speech_stopped()
+        await asyncio.sleep(.04)
+        assert c.unanswered == 1
+        assert not c.confirmed
+        assert p.spoken
+    finally:
+        await r.close()
+
+
+async def test_error_from_cancelled_playback_cannot_fail_new_turn():
+    class LateFailure(Playback):
+        async def speak(self, segment):
+            if segment.id == 'welcome':
+                try:
+                    await asyncio.Event().wait()
+                except asyncio.CancelledError:
+                    raise OSError('Late failure from the interrupted request')
+            return True
+    c, p = Controller(), LateFailure()
+    r = Runtime(c, p)
+    r.start()
+    await asyncio.sleep(0)
+    old = r.task
+    r.speech_started()
+    r.transcript('repeat the time')
+    await old
+    await r.task
+    assert c.status == 'awaiting_confirmation'
+    assert c.failure is None
+    assert p.fallbacks == 0
+    await r.close()

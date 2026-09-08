@@ -71,3 +71,40 @@ async def test_evidence_export_survives_missing_git_permission(monkeypatch):
     assert report['git_commit']=='unavailable'
     assert report['snapshot']['confirmed'] is False
     assert report['configuration']['provider']=='Rime'
+
+
+async def test_worker_close_releases_other_resources_when_one_close_fails():
+    from unittest.mock import AsyncMock
+    voice=worker.VoiceWorker('cleanup')
+    voice.session=AsyncMock()
+    voice.session.aclose.side_effect=RuntimeError('Failed session cleanup')
+    voice.audio=AsyncMock()
+    voice._recognition=AsyncMock()
+    voice.http=AsyncMock()
+    voice.room=AsyncMock()
+    await voice.close()
+    voice.audio.close.assert_awaited_once()
+    voice._recognition.aclose.assert_awaited_once()
+    voice.room.disconnect.assert_awaited_once()
+    voice.http.close.assert_awaited_once()
+    assert any(event['event']=='cleanup_failed' and event['resource']=='session'
+               for event in voice.controller.events)
+
+
+async def test_concurrent_close_waits_for_shared_cleanup():
+    from unittest.mock import AsyncMock
+    voice=worker.VoiceWorker('concurrent-cleanup')
+    entered,finish=asyncio.Event(),asyncio.Event()
+    async def disconnect():
+        entered.set()
+        await finish.wait()
+    voice.room=AsyncMock()
+    voice.room.disconnect.side_effect=disconnect
+    first=asyncio.create_task(voice.close())
+    await entered.wait()
+    second=asyncio.create_task(voice.close())
+    await asyncio.sleep(0)
+    assert not second.done()
+    finish.set()
+    await asyncio.gather(first,second)
+    voice.room.disconnect.assert_awaited_once()

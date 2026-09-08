@@ -59,11 +59,16 @@ class VoiceWorker:
         self.bypass_cache = bypass_cache
         self._recognition = None
         self.start_requested = False
+        self._close_task: asyncio.Task | None = None
 
     def schedule(self, coroutine):
         task = asyncio.create_task(coroutine)
         self.tasks.add(task)
-        task.add_done_callback(self.tasks.discard)
+        def completed(finished):
+            self.tasks.discard(finished)
+            if not finished.cancelled() and finished.exception():
+                self.controller.emit('background_task_failed', error_type=type(finished.exception()).__name__)
+        task.add_done_callback(completed)
         return task
 
     async def connect(self):
@@ -90,6 +95,8 @@ class VoiceWorker:
         def state(event):
             if event.new_state == 'speaking':
                 self.runtime.speech_started()
+            elif event.old_state == 'speaking':
+                self.runtime.speech_stopped()
 
         @self.session.on('error')
         def error(event):
@@ -161,20 +168,31 @@ class VoiceWorker:
                                 'Synthetic appointment only; no real booking is updated.']}
 
     async def close(self):
-        if self.closed:
-            return
-        self.closed = True
+        if self._close_task is None:
+            self.closed = True
+            self._close_task = asyncio.create_task(self._cleanup())
+        # Concurrent API/expiry/shutdown callers wait for the same cleanup.
+        await asyncio.shield(self._close_task)
+
+    async def _cleanup(self):
+        async def release(name, callback):
+            try:
+                await asyncio.wait_for(callback(), timeout=10)
+            except Exception as error:
+                self.controller.emit('cleanup_failed', resource=name, error_type=type(error).__name__)
+
         if self.runtime:
-            await self.runtime.close()
-        for task in self.tasks:
+            await release('runtime', self.runtime.close)
+        pending = tuple(self.tasks)
+        for task in pending:
             task.cancel()
-        await asyncio.gather(*self.tasks, return_exceptions=True)
+        await asyncio.gather(*pending, return_exceptions=True)
         if self.session:
-            await self.session.aclose()
+            await release('session', self.session.aclose)
         if self._recognition:
-            await self._recognition.aclose()
+            await release('recognition', self._recognition.aclose)
         if self.audio:
-            await self.audio.close()
-        await self.room.disconnect()
+            await release('audio', self.audio.close)
+        await release('room', self.room.disconnect)
         if self.http:
-            await self.http.close()
+            await release('http', self.http.close)

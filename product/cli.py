@@ -8,6 +8,8 @@ import subprocess
 import sys
 import wave
 import hashlib
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -73,21 +75,48 @@ def main():
         output.write_text(json.dumps(response.json(),indent=2),encoding='utf-8')
         print(f'Evidence exported to {output}')
         return
+    if args.command=='live':
+        evidence=ROOT/'evidence';evidence.mkdir(exist_ok=True)
+        status={'status':'running','run_id':uuid.uuid4().hex,
+                'started_at':datetime.now(timezone.utc).isoformat(), 'stage':'preflight'}
+        status_path=evidence/'live-status.json'
+        def save_status():
+            temporary=status_path.with_suffix('.tmp')
+            temporary.write_text(json.dumps(status,indent=2),encoding='utf-8')
+            temporary.replace(status_path)
+        save_status()  # invalidate earlier success before any fallible live work
     try:
         report,code=asyncio.run(preflight())
+    except KeyboardInterrupt:
+        report,code={'status':'interrupted','live_verification':'not_run'},130
     except Exception as error:
         report,code={'status':'preflight_failed','error_type':type(error).__name__,'live_verification':'not_run'},1
     print(json.dumps(report,indent=2))
     if args.command=='preflight': raise SystemExit(code)
-    evidence=ROOT/'evidence';evidence.mkdir(exist_ok=True)
     if code:
-        (evidence/'live-status.json').write_text(json.dumps({**report,'status':'unverified'},indent=2))
+        status.update(configuration=report, status='interrupted' if code==130 else 'unverified',
+                      finished_at=datetime.now(timezone.utc).isoformat())
+        save_status()
         raise SystemExit(code)
-    asyncio.run(fixtures())
-    from shutil import which
-    pnpm=which('pnpm') or str(Path(sys.base_prefix).parent/'bin'/'fallback'/'pnpm.cmd')
-    result=subprocess.call([pnpm,'exec','playwright','test','--config','playwright.live.config.ts'],cwd=ROOT/'web')
-    (evidence/'live-status.json').write_text(json.dumps({'status':'passed' if result==0 else 'failed','configuration':report},indent=2))
+    status.update(configuration=report,stage='caller_fixtures')
+    save_status()
+    try:
+        asyncio.run(fixtures())
+        status['stage']='browser_verification'
+        save_status()
+        from shutil import which
+        pnpm=which('pnpm') or str(Path(sys.base_prefix).parent/'bin'/'fallback'/'pnpm.cmd')
+        result=subprocess.call([pnpm,'exec','playwright','test','--config','playwright.live.config.ts'],cwd=ROOT/'web')
+        status['status']='passed' if result==0 else 'failed'
+    except KeyboardInterrupt:
+        result=130
+        status['status']='interrupted'
+    except Exception as error:
+        result=1
+        status.update(status='failed',error_type=type(error).__name__)
+    status['finished_at']=datetime.now(timezone.utc).isoformat()
+    save_status()
+    print(json.dumps(status,indent=2))
     raise SystemExit(result)
 
 
