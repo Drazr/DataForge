@@ -2,7 +2,7 @@
 
 ## Input
 
-A copied, complete Noise-Masking baseline and optional Grid Analysis conclusions.
+A copied, complete Noise-Masking baseline.
 The frozen producer manifest supplies the scoring configuration, corpus, repeats,
 noise sources and SNR conditions. This branch imports baseline scores/audio.
 
@@ -22,7 +22,7 @@ texts and review their audio. No winner or failed validation is a valid result.
 
 ## Evidence to retain
 
-- Copied `inputs/noise_masking/<run-id>/`, its `handoff.json` and optional grid inputs.
+- Copied `inputs/noise_masking/<run-id>/` and its `handoff.json`.
 - `manifest.json`, `imported_baseline.json`, `evidence_scope.json` and cache ledger.
 - Challenge and selection locks; development/held-out comparison CSVs.
 - `results.csv`, audio, transcripts, per-fact details and human listening notes.

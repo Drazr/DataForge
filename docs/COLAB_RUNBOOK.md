@@ -11,18 +11,15 @@ Use the eleven cells in `colab_noise_ab.py` on `noise-conditioned-ab`.
 1. Cells 1–3 mount Drive, clone this branch into `/content/DataForge-delivery`
    and install audio dependencies. Use Python 3.11/3.12/3.13. Restart after
    installation, rerun 1–2, skip Cell 3, and continue at Cell 4.
-2. Cell 4: set `SOURCE_NOISE_RUN` to the completed Noise-Masking run. The handoff
-   copies tables, manifest, scored JSON rows, clips and cached speech into this
-   checkout's `inputs/`. Leave `GRID_RESULTS = None` for the chosen order because
-   Grid Analysis runs last. Importing a matching development grid remains an
-   optional capability, not a prerequisite or permission to reopen a frozen selection.
+2. Cell 4 uses the prefilled completed Noise-Masking run. The handoff copies
+   tables, manifest, scored JSON rows, clips and cached speech into this
+   checkout's `inputs/` and verifies their hashes.
 3. Cell 5 reads your `RIME_API_KEY` secret and imports the frozen baseline into
    the separate delivery output folder without new synthesis or transcription.
    Keep original noise datasets and downloaded ASR/DNSMOS models in shared Drive
    at their frozen paths. Configuration/scoring mismatches fail before A/B work.
-4. Cell 6: review recurrence counts and any grid suggestions; enter one or two
-   conditions with at least two texts losing the same cleanly recovered fact
-   in every repeat. This freezes conditions; it does not select a delivery change.
+4. Cell 6 freezes the prefilled `competing_speech_-5dB` condition, supported by
+   three texts losing a cleanly recovered fact in every repeat.
 5. Cell 7 runs short-clause, targeted repetition and slowdown variants, separately.
    New Rime requests are billed. Identical cached speech is reused.
 6. Cell 8: listen to matched development clips and populate `LISTENING_REVIEW`.

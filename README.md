@@ -2,7 +2,7 @@
 
 Branch: `noise-conditioned-ab`.
 
-Project scope: only **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**, in that order. Shared planning documents live only on `main`: [hackathon guidelines](https://github.com/Drazr/DataForge/blob/main/HACKATHON_GUIDELINES.md), [implementation roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md), and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged by this test-scope decision.
+Project scope: **Noise-Masking Test → Noise-Conditioned Delivery A/B**. Grid/Breakpoint Analysis was retired to prioritize this direct intervention test. Shared planning documents live only on `main`: [hackathon guidelines](https://github.com/Drazr/DataForge/blob/main/HACKATHON_GUIDELINES.md), [implementation roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md), and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods remain unchanged.
 
 Copy the eleven cells in [colab_noise_ab.py](colab_noise_ab.py) into Colab, preserving
 the three-blank-line cell separators. Cells 1–2 mount Drive and clone this branch.
@@ -10,7 +10,6 @@ the three-blank-line cell separators. Cells 1–2 mount Drive and clone this bra
 This workflow starts from a completed Noise-Masking baseline. It copies the needed
 outputs into `inputs/noise_masking/<run-id>/`, verifies hashes/configuration, and
 imports baseline scores/audio without synthesizing or transcribing them again.
-Optional Grid Analysis conclusions are copied into `inputs/grid_analysis/`.
 New A/B and held-out results go to `MyDrive/DataForge/delivery_ab/outputs/<run-id>/`.
 
 Follow [the runbook](docs/COLAB_RUNBOOK.md) and [branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md).

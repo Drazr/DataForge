@@ -66,7 +66,7 @@ print("Restart the Colab session after installation to unload old packages. "
 
 # %% Cell 4 - Copy the completed Noise-Masking outputs into this branch.
 import json
-from dataforge.handoff import copy_run, copy_grid_results, verify_handoff
+from dataforge.handoff import copy_run, verify_handoff
 SOURCE_NOISE_RUN = WORK / "noise_masking/outputs/6bd1eb398398af0e"
 EXPECTED_BASELINE_ID = "6bd1eb398398af0edcbe31d260e15fa71a6e5aca1c3d9abc117aef7028d71966"
 # The review ZIP is supporting evidence. The complete run and synthesis cache
@@ -84,13 +84,6 @@ COPIED_BASELINE = copy_run(SOURCE_NOISE_RUN, REPO / "inputs/noise_masking", for_
 handoff = verify_handoff(COPIED_BASELINE)
 print("Copied baseline inputs:", COPIED_BASELINE)
 print("Verified handoff files:", len(handoff["files"]))
-# Optional: copy Grid Analysis conclusions for this same development baseline.
-GRID_RESULTS = None  # e.g. WORK / "grid_analysis/outputs/RUN_ID/SESSION/results"
-COPIED_GRID = None
-if GRID_RESULTS is not None:
-    source_id = json.loads((COPIED_BASELINE / "handoff.json").read_text())["run_id"]
-    COPIED_GRID = copy_grid_results(GRID_RESULTS, REPO / "inputs/grid_analysis", source_id)
-    print("Copied grid conclusions:", COPIED_GRID)
 
 
 
@@ -115,8 +108,6 @@ save_json(experiment.root / "catalog_check.json", validate_catalog(config))
 baseline = experiment.all_results("dev")
 recurrent = noise_failure_evidence(baseline, config["replicates"])
 display(recurrent.groupby("condition").text_id.nunique().rename("recurrent_texts"))
-if COPIED_GRID is not None:
-    display(pd.read_csv(COPIED_GRID / "development_challenge_cases.csv"))
 print("Baseline imported without rerunning it; A/B outputs:", experiment.root)
 
 

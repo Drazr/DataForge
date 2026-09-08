@@ -1,7 +1,7 @@
 # Copied upstream evidence
 
 Cell 4 copies the completed Noise-Masking run here, including baseline JSON rows,
-clips and cached speech. Optional Grid Analysis conclusions are copied separately.
+clips and cached speech.
 Inputs remain frozen; new A/B outputs are saved to the delivery folder in Drive.
 
 The supplied review ZIP has been copied locally to

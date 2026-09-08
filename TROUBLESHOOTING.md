@@ -16,7 +16,7 @@ setup fixes and the baseline issues that currently prevent this test.
 
 Next: use the measured Cell 10 assessment to decide whether a new development
 baseline is justified. Do not lower the challenge threshold or inspect held-out
-results to manufacture eligibility. Grid analysis remains the final workflow.
+results to manufacture eligibility. This was the status before Grid was retired.
 
 Existing Colab clones retain their old commit until explicitly updated, even
 after changes are pushed to GitHub; producer/consumer scoring hashes
@@ -29,7 +29,7 @@ A/B cannot proceed under the existing gate. Clean fact recovery is 95.92%, versu
 The local A/B suite passed 32 tests, with one Noise-only test skipped. Use a
 separately planned development baseline if further A/B work is pursued.
 
-Current decision: Grid/Breakpoint Analysis is deferred in favor of this A/B
+Current decision at that stage: Grid/Breakpoint Analysis was deferred in favor of this A/B
 workflow if the next `stress_0_to_minus5` baseline qualifies a challenge. If it
 does not qualify, A/B is inapplicable and neither downstream workflow should run.
 
@@ -49,7 +49,10 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
 5. The review manifest's implementation hash matches the A/B scorer's Git/LF
    content. No migration is needed because the producer used the corrected scorer.
 6. Human baseline listening remains unconfirmed. A/B metrics, candidate selection
-   and held-out validation have not run. Grid stays deferred for this sequence.
+   and held-out validation have not run. Grid was deferred at this stage.
 7. Validation passed: 33 tests, with one Noise-only check skipped. The new
    evidence regression recomputes all 210 fact scores and confirms the same
    three recurrent texts using the unchanged consumer scorer.
+8. Grid/Breakpoint Analysis was retired to prioritize the direct A/B test. Removed
+   the unused Grid input from Cells 4–5; this reduces setup without changing the
+   frozen baseline, challenge, metrics or held-out rules.
