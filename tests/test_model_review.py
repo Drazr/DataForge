@@ -22,7 +22,7 @@ class NotebookSchemaTests(unittest.TestCase):
         tree = ast.parse((ROOT / "colab_noise_ab.py").read_text())
         helpers = [node for node in tree.body if isinstance(node, ast.FunctionDef)
                    and node.name in {"parse_review", "request_valid_review"}]
-        cls.scope = {"json": json, "re": re}
+        cls.scope = {"json": json, "re": re, "REVIEW_PROMPT": "full schema"}
         exec(compile(ast.Module(body=helpers, type_ignores=[]), "notebook_helpers", "exec"), cls.scope)
 
     def test_reported_schema_failure_retried_without_inventing_fields(self):
@@ -41,11 +41,25 @@ class NotebookSchemaTests(unittest.TestCase):
         self.assertIn("clarity", corrections[1])
         self.assertIn("artifact", corrections[1])
 
-    def test_invalid_responses_stop_after_two_attempts(self):
+    def test_persistent_missing_field_uses_focused_audio_judgment(self):
+        incomplete = {"transcript": "Audible speech", "clarity": "clear",
+                      "competing_voice": False, "naturalness": "acceptable", "notes": "Clear"}
+        instructions = []
+        def generate(instruction):
+            instructions.append(instruction)
+            return json.dumps(incomplete if len(instructions) < 3 else {"artifacts": "none"})
+        record = {}
+        result = self.scope["request_valid_review"](generate, record)
+        self.assertEqual(result["artifacts"], "none")
+        self.assertEqual(len(record["generation_attempts"]), 3)
+        self.assertEqual(record["generation_attempts"][2]["requested_fields"], ["artifacts"])
+        self.assertIn("only the missing", instructions[2])
+
+    def test_invalid_focused_response_stops_after_three_attempts(self):
         record = {}
         with self.assertRaises(ValueError):
             self.scope["request_valid_review"](lambda _: '{"transcript":"speech"}', record)
-        self.assertEqual(len(record["generation_attempts"]), 2)
+        self.assertEqual(len(record["generation_attempts"]), 3)
 
     def test_fenced_valid_json_accepted_and_nonobject_rejected(self):
         good = {"transcript": "speech", "clarity": "clear", "competing_voice": False,

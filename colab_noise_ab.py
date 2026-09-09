@@ -267,33 +267,72 @@ def parse_review(text):
     return answer
 
 def request_valid_review(generate, record):
-    """Retry a schema error once without supplying facts or quality answers."""
+    """Retry the full schema once, then request only still-missing fields."""
     correction = ""
     record["generation_attempts"] = []
     for attempt in range(2):
-        raw_text = generate(correction)
+        instruction = REVIEW_PROMPT + correction
+        raw_text = generate(instruction)
         record["raw_response"] = raw_text
-        evidence = {"raw_response": raw_text, "correction": correction}
+        evidence = {"phase": "full_schema", "raw_response": raw_text,
+                    "correction": correction}
         record["generation_attempts"].append(evidence)
         try:
             return parse_review(raw_text)
         except ValueError as error:
             evidence["schema_error"] = str(error)
-            if attempt == 1:
-                raise
-            correction = (
-                "\nYour previous response did not match the JSON schema: " + str(error)
-                + ". Listen to the audio and return all six required fields exactly as specified. "
-                "Include clarity and artifacts (plural); artifacts must be a string label, not a boolean. "
-                "Do not guess missing speech or invent quality judgments to satisfy the format. "
-                "Return only the JSON object and keep notes brief."
-            )
+            if attempt == 0:
+                correction = (
+                    "\nYour previous response did not match the JSON schema: " + str(error)
+                    + ". Listen to the audio and return all six required fields exactly as specified. "
+                    "Include clarity and artifacts (plural); artifacts must be a string label, not a boolean. "
+                    "Do not guess missing speech or invent quality judgments to satisfy the format. "
+                    "Return only the JSON object and keep notes brief."
+                )
+    # Keep valid fields from the second full response. Ask the model to listen
+    # again for missing judgments instead of manufacturing defaults in code.
+    candidate_text = re.sub(r"^```(?:json)?\s*|\s*```$", "", record["raw_response"].strip(), flags=re.I)
+    candidate = json.loads(candidate_text)
+    if not isinstance(candidate, dict):
+        raise ValueError("Expected a JSON object before focused schema repair")
+    required = {"transcript", "clarity", "competing_voice", "artifacts", "naturalness", "notes"}
+    retained = {key: value for key, value in candidate.items() if key in required}
+    missing = sorted(required - set(retained))
+    if not missing:
+        return parse_review(json.dumps(retained))
+    field_rules = {
+        "transcript": "a nonempty string containing only audible target-speaker words; use [unclear] rather than guessing",
+        "clarity": "one string: clear, partial, or unintelligible",
+        "competing_voice": "a JSON boolean",
+        "artifacts": "one string: none, minor, severe, or uncertain",
+        "naturalness": "one string: acceptable, unacceptable, or uncertain",
+        "notes": "a brief string",
+    }
+    requested = {key: field_rules[key] for key in missing}
+    focused_prompt = (
+        "Listen to this recording again and judge only the missing review fields below. "
+        "Background competing speech is not a synthesis artifact. Do not infer masked facts. "
+        "Return ONLY one JSON object containing exactly these keys and no others:\n"
+        + json.dumps(requested, indent=2)
+    )
+    raw_text = generate(focused_prompt)
+    evidence = {"phase": "missing_fields", "requested_fields": missing,
+                "raw_response": raw_text}
+    record["generation_attempts"].append(evidence)
+    supplement_text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.I)
+    supplement = json.loads(supplement_text)
+    if not isinstance(supplement, dict) or set(supplement) != set(missing):
+        evidence["schema_error"] = "Focused response did not contain exactly the requested fields"
+        raise ValueError(evidence["schema_error"])
+    merged = {**retained, **supplement}
+    record["raw_response"] = json.dumps(merged)
+    return parse_review(record["raw_response"])
 
 protocol = {
     "review_type": "model", "human_review": "pending", "model_id": MODEL_ID,
     "model_revision": MODEL_REVISION, "quantization": "4-bit NF4 double quantization, float16 compute",
     "prompt": REVIEW_PROMPT, "max_new_tokens": 512, "temperature": 0,
-    "schema_retry_limit": 1, "schema_protocol": "strict_fields_with_one_retry_v1",
+    "schema_retry_limit": 2, "schema_protocol": "strict_fields_then_focused_missing_fields_v2",
     "scope": "development Baseline/Repeat, clean plus frozen challenge; no held-out audio",
     "amendment": "User requested model review after development metrics and before held-out access.",
 }
@@ -323,8 +362,8 @@ for index, row in queue.iterrows():
             {"type": "audio", "audio": str(audio_path)}, {"type": "text", "text": REVIEW_PROMPT}]}]
         started = time.monotonic()
         try:
-            def generate_review(correction):
-                conversation[0]["content"][1]["text"] = REVIEW_PROMPT + correction
+            def generate_review(instruction):
+                conversation[0]["content"][1]["text"] = instruction
                 prompt = processor.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
                 audios, images, videos = process_mm_info(conversation, use_audio_in_video=False)
                 inputs = processor(text=prompt, audio=audios, images=images, videos=videos,

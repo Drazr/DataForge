@@ -101,3 +101,9 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     accommodate transcription plus all review fields; this does not guarantee
     schema compliance. Fixed Markdown fence parsing, and stop at the first
     remaining error to avoid spending GPU time on 56 repeated failures.
+19. The corrected full-schema retry still omitted `artifacts` on the first clip.
+    Cell 10 now performs one focused audio judgment for only the fields missing
+    from the second full response, then validates the merged object. It neither
+    converts aliases nor supplies default labels. All raw responses and the
+    requested field list remain in `generation_attempts`; a malformed focused
+    response still stops the run at that clip.
