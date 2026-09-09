@@ -21,7 +21,8 @@ class NotebookSchemaTests(unittest.TestCase):
         # Load only the pure helpers, without executing Colab or loading a GPU model.
         tree = ast.parse((ROOT / "colab_noise_ab.py").read_text())
         helpers = [node for node in tree.body if isinstance(node, ast.FunctionDef)
-                   and node.name in {"parse_review", "invalid_review_fields", "request_valid_review"}]
+                   and node.name in {"normalize_review_keys", "parse_review", "invalid_review_fields",
+                                     "request_valid_review"}]
         cls.scope = {"json": json, "re": re, "REVIEW_PROMPT": "full schema"}
         exec(compile(ast.Module(body=helpers, type_ignores=[]), "notebook_helpers", "exec"), cls.scope)
 
@@ -90,6 +91,18 @@ class NotebookSchemaTests(unittest.TestCase):
         self.assertIs(result["competing_voice"], False)
         self.assertEqual(normalizations[0]["field"], "competing_voice")
         response["competing_voice"] = "no"
+        with self.assertRaises(ValueError):
+            self.scope["parse_review"](json.dumps(response))
+
+    def test_plural_competing_voice_alias_is_normalized_and_audited(self):
+        response = {"transcript": "speech", "clarity": "clear", "competing_voices": False,
+                    "artifacts": "none", "naturalness": "acceptable", "notes": ""}
+        normalizations = []
+        result = self.scope["parse_review"](json.dumps(response), normalizations)
+        self.assertIs(result["competing_voice"], False)
+        self.assertNotIn("competing_voices", result)
+        self.assertEqual(normalizations[0]["rule"], "exact_plural_key_alias")
+        response["competing_voice"] = True
         with self.assertRaises(ValueError):
             self.scope["parse_review"](json.dumps(response))
 

@@ -250,12 +250,28 @@ def stable_hash(path):
             h.update(block)
     return h.hexdigest()
 
+def normalize_review_keys(answer, normalizations=None):
+    answer = dict(answer)
+    alias, canonical = "competing_voices", "competing_voice"
+    if alias in answer:
+        if canonical in answer and answer[canonical] != answer[alias]:
+            raise ValueError("Conflicting competing_voice and competing_voices values")
+        if canonical not in answer:
+            answer[canonical] = answer[alias]
+        del answer[alias]
+        if normalizations is not None:
+            normalizations.append({"field": canonical, "from_key": alias,
+                                   "to_key": canonical,
+                                   "rule": "exact_plural_key_alias"})
+    return answer
+
 def parse_review(text, normalizations=None):
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.I)
     answer = json.loads(text)
     required = {"transcript", "clarity", "competing_voice", "artifacts", "naturalness", "notes"}
     if not isinstance(answer, dict):
         raise ValueError("Expected a JSON object")
+    answer = normalize_review_keys(answer, normalizations)
     if set(answer) != required:
         raise ValueError(f"Missing fields: {sorted(required - set(answer))}; unexpected fields: {sorted(set(answer) - required)}")
     if not isinstance(answer["transcript"], str) or not answer["transcript"].strip():
@@ -342,6 +358,10 @@ def request_valid_review(generate, record):
             raise
     if not isinstance(candidate, dict):
         raise ValueError("Expected a JSON object before focused schema repair")
+    candidate_normalizations = []
+    candidate = normalize_review_keys(candidate, candidate_normalizations)
+    if candidate_normalizations:
+        record["generation_attempts"][-1]["normalizations"] = candidate_normalizations
     repair_fields = invalid_review_fields(candidate)
     retained = {key: value for key, value in candidate.items()
                 if key not in repair_fields and key in {
@@ -369,7 +389,14 @@ def request_valid_review(generate, record):
     record["generation_attempts"].append(evidence)
     supplement_text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.I)
     supplement = json.loads(supplement_text)
-    if not isinstance(supplement, dict) or set(supplement) != set(repair_fields):
+    if not isinstance(supplement, dict):
+        evidence["schema_error"] = "Focused response was not a JSON object"
+        raise ValueError(evidence["schema_error"])
+    supplement_normalizations = []
+    supplement = normalize_review_keys(supplement, supplement_normalizations)
+    if supplement_normalizations:
+        evidence["normalizations"] = supplement_normalizations
+    if set(supplement) != set(repair_fields):
         evidence["schema_error"] = "Focused response did not contain exactly the requested fields"
         raise ValueError(evidence["schema_error"])
     merged = {**retained, **supplement}

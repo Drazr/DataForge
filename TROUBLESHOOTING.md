@@ -134,3 +134,8 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     JSON recovery attempt after truncation. The 17 successful cached reviews
     retain their recorded generation protocol; only failed/new rows use this
     documented reliability amendment.
+24. Clip 20's focused response returned the complete requested judgments but
+    named the boolean key `competing_voices` instead of `competing_voice`.
+    Cell 10 now canonicalizes that exact plural key and records the rename.
+    If both forms appear with conflicting values, validation fails; no other
+    unknown aliases are accepted.
