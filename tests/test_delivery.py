@@ -49,11 +49,25 @@ class DeliveryImportTests(unittest.TestCase):
                 self.assertEqual(len(frame), len(baseline))
                 self.assertTrue(all(Path(p).is_file() for p in frame.audio_path))
                 self.assertTrue(all(Path(p).is_file() for p in frame.source_audio))
+                # A previous notebook may have recorded the legacy, path-sensitive
+                # receipt hash. Another account mounts identical Drive content at
+                # a different source path; resume and migrate after row validation.
+                provenance_path = imported.root / "imported_baseline.json"
+                provenance_path.write_text(json.dumps({"run_id": imported.fingerprint,
+                                                       "handoff_sha256": "legacy-path-sensitive-hash"}))
+                receipt_path = copied / "handoff.json"
+                receipt = json.loads(receipt_path.read_text())
+                receipt["source_directory"] = "/content/drive/MyDrive/another-account/DataForge"
+                receipt["audio_path_remap"] = {"/old/account": "/new/account"}
+                receipt_path.write_text(json.dumps(receipt))
                 ledger = json.loads(imported.ledger_path.read_text())
                 ledger.append({"cache_id": "later-ab-request", "characters": 1})
                 imported.ledger_path.write_text(json.dumps(ledger))
                 resumed = start_delivery(copied, root / "delivery-output")
                 self.assertEqual(len(json.loads(resumed.ledger_path.read_text())), 3)
+                migrated = json.loads(provenance_path.read_text())
+                self.assertIn("handoff_files_sha256", migrated)
+                self.assertNotIn("handoff_sha256", migrated)
                 imported.synthesize(corpus[0], "baseline", 0, "TEST_ONLY")
                 self.assertEqual(post.call_count, 2)
 

@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from .experiment import Experiment, file_hash, save_json
+from .experiment import Experiment, digest, file_hash, save_json
 from .handoff import copy_once, verify_handoff
 from .reporting import export_baseline
 
@@ -33,9 +33,18 @@ def start_delivery(copied_run, output):
     ):
         raise ValueError("The copied development baseline is incomplete or contains unrelated rows")
     receipt_path = experiment.root / "imported_baseline.json"
-    provenance = {"run_id": receipt["run_id"], "handoff_sha256": file_hash(copied_run / "handoff.json")}
-    if receipt_path.exists() and json.loads(receipt_path.read_text()) != provenance:
-        raise ValueError("A different baseline was already imported here; choose a new output directory")
+    # Hash verified content rather than the full receipt: source_directory and
+    # audio_path_remap legitimately change when the same Drive folder is mounted
+    # from another Google account.
+    provenance = {"run_id": receipt["run_id"],
+                  "handoff_files_sha256": digest(receipt["files"])}
+    if receipt_path.exists():
+        previous = json.loads(receipt_path.read_text())
+        if previous.get("run_id") != provenance["run_id"]:
+            raise ValueError("A different baseline was already imported here; choose a new output directory")
+        previous_content = previous.get("handoff_files_sha256")
+        if previous_content is not None and previous_content != provenance["handoff_files_sha256"]:
+            raise ValueError("The baseline content changed after import; choose a new output directory")
     for row in records:
         clip_id = row["clip_id"]
         if Path(clip_id).name != clip_id or "/" in clip_id or "\\" in clip_id:

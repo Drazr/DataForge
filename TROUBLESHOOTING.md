@@ -113,3 +113,10 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     keys and requests all affected fields together. For this observed response
     it requests `artifacts` and `clarity`; it does not translate `acceptable`
     into `clear` or reuse the earlier boolean `artifact` alias.
+21. A new-account resume failed in Cell 5 because `imported_baseline.json`
+    contained the SHA-256 of the whole handoff receipt. That receipt includes
+    account-specific source paths, so identical verified files could appear to
+    be a different baseline. Delivery provenance now hashes the receipt's file
+    inventory and run ID. Existing path-sensitive provenance migrates only after
+    the current receipt, complete row set, audio hashes and saved baseline rows
+    pass their existing checks; actual content changes still fail.
