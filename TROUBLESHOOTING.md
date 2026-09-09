@@ -139,3 +139,9 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     Cell 10 now canonicalizes that exact plural key and records the rename.
     If both forms appear with conflicting values, validation fails; no other
     unknown aliases are accepted.
+25. Clip 30 returned a JSON list where an enum string was required. The enum
+    membership check raised an unintended `TypeError`, bypassing the focused
+    repair. All clarity, artifact and naturalness checks now verify string type
+    before allowed-value membership. Lists and other wrong types become normal
+    validation failures and request only the affected field; they are never
+    flattened or silently converted.

@@ -106,6 +106,19 @@ class NotebookSchemaTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.scope["parse_review"](json.dumps(response))
 
+    def test_list_enum_is_repaired_instead_of_raising_type_error(self):
+        bad = {"transcript": "speech", "clarity": ["clear"], "competing_voice": False,
+               "artifacts": "none", "naturalness": "acceptable", "notes": ""}
+        good_field = {"clarity": "clear"}
+        calls = []
+        def generate(instruction):
+            calls.append(instruction)
+            return json.dumps(bad if len(calls) < 3 else good_field)
+        record = {}
+        result = self.scope["request_valid_review"](generate, record)
+        self.assertEqual(result["clarity"], "clear")
+        self.assertEqual(record["generation_attempts"][2]["requested_fields"], ["clarity"])
+
 
 class ModelReviewTests(unittest.TestCase):
     def record(self, **overrides):

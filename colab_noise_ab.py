@@ -285,19 +285,24 @@ def parse_review(text, normalizations=None):
             normalizations.append({"field": "competing_voice", "from": original,
                                    "to": answer["competing_voice"],
                                    "rule": "exact_case_insensitive_boolean_string"})
-    if answer["clarity"] not in {"clear", "partial", "unintelligible"} or not isinstance(answer["competing_voice"], bool):
+    if (not isinstance(answer["clarity"], str)
+            or answer["clarity"] not in {"clear", "partial", "unintelligible"}
+            or not isinstance(answer["competing_voice"], bool)):
         raise ValueError("Invalid clarity/competing_voice")
-    if answer["artifacts"] not in {"none", "minor", "severe", "uncertain"} or answer["naturalness"] not in {"acceptable", "unacceptable", "uncertain"}:
+    if (not isinstance(answer["artifacts"], str)
+            or answer["artifacts"] not in {"none", "minor", "severe", "uncertain"}
+            or not isinstance(answer["naturalness"], str)
+            or answer["naturalness"] not in {"acceptable", "unacceptable", "uncertain"}):
         raise ValueError("Invalid quality label")
     return answer
 
 def invalid_review_fields(answer):
     validators = {
         "transcript": lambda value: isinstance(value, str) and bool(value.strip()),
-        "clarity": lambda value: value in {"clear", "partial", "unintelligible"},
+        "clarity": lambda value: isinstance(value, str) and value in {"clear", "partial", "unintelligible"},
         "competing_voice": lambda value: isinstance(value, bool),
-        "artifacts": lambda value: value in {"none", "minor", "severe", "uncertain"},
-        "naturalness": lambda value: value in {"acceptable", "unacceptable", "uncertain"},
+        "artifacts": lambda value: isinstance(value, str) and value in {"none", "minor", "severe", "uncertain"},
+        "naturalness": lambda value: isinstance(value, str) and value in {"acceptable", "unacceptable", "uncertain"},
         "notes": lambda value: isinstance(value, str),
     }
     return sorted(key for key, validator in validators.items()
