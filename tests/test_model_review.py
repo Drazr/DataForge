@@ -62,6 +62,19 @@ class NotebookSchemaTests(unittest.TestCase):
             self.scope["request_valid_review"](lambda _: '{"transcript":"speech"}', record)
         self.assertEqual(len(record["generation_attempts"]), 3)
 
+    def test_truncated_json_uses_concise_recovery(self):
+        good = {"transcript": "Target speech [background repetition continues]", "clarity": "partial",
+                "competing_voice": True, "artifacts": "none",
+                "naturalness": "acceptable", "notes": "Background looped"}
+        instructions = []
+        def generate(instruction):
+            instructions.append(instruction)
+            return '{"transcript":"loop loop' if len(instructions) < 3 else json.dumps(good)
+        record = {}
+        self.assertEqual(self.scope["request_valid_review"](generate, record), good)
+        self.assertEqual(record["generation_attempts"][2]["phase"], "concise_json_recovery")
+        self.assertIn("under 80 words", instructions[2])
+
     def test_fenced_valid_json_accepted_and_nonobject_rejected(self):
         good = {"transcript": "speech", "clarity": "clear", "competing_voice": False,
                 "artifacts": "none", "naturalness": "acceptable", "notes": ""}

@@ -126,3 +126,11 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     exact strings `"true"` and `"false"`, records the conversion beside the raw
     response, and continues. Ambiguous strings such as `"no"`, numbers and all
     invalid label values still fail validation.
+23. Clip 18 entered a decoder repetition loop on competing background speech,
+    repeating one phrase until the 512-token output ended inside the transcript;
+    both full-schema attempts were therefore invalid JSON. Cell 10 now caps the
+    transcript, tells the reviewer how to mark looping background speech, uses a
+    256-token output with mild repetition controls, and makes one concise full-
+    JSON recovery attempt after truncation. The 17 successful cached reviews
+    retain their recorded generation protocol; only failed/new rows use this
+    documented reliability amendment.

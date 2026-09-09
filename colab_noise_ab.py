@@ -200,6 +200,8 @@ REVIEW_PROMPT = """Listen to this recording. It may contain competing speakers.
 Focus on the appointment, payment, and reference-code message, not unrelated background reading.
 Transcribe only words actually audible from the target speaker. Preserve repetitions and contradictions.
 Write [unclear] instead of guessing masked words. Do not infer names, numbers, dates, times, or negations.
+Keep the transcript under 100 words. If background speech loops, transcribe it at most twice and write
+[background repetition continues]; do not repeat a phrase until the response is truncated.
 Assess target speech clarity and audible synthesis artifacts; background speech alone is not an artifact.
 Return ONLY valid JSON with these exact fields: transcript (string), clarity (clear|partial|unintelligible),
 competing_voice (boolean), artifacts (none|minor|severe|uncertain),
@@ -315,7 +317,29 @@ def request_valid_review(generate, record):
     # Keep valid fields from the second full response. Ask the model to listen
     # again for missing judgments instead of manufacturing defaults in code.
     candidate_text = re.sub(r"^```(?:json)?\s*|\s*```$", "", record["raw_response"].strip(), flags=re.I)
-    candidate = json.loads(candidate_text)
+    try:
+        candidate = json.loads(candidate_text)
+    except json.JSONDecodeError as error:
+        recovery_prompt = (
+            "Listen to the recording again and return the six-field JSON object from the original task. "
+            "The prior response entered a repetition loop and was truncated. Focus on the target appointment, "
+            "payment and reference-code speaker. Keep transcript under 80 words. If background speech repeats, "
+            "write it at most twice followed by [background repetition continues]. Return only complete JSON."
+        )
+        raw_text = generate(recovery_prompt)
+        record["raw_response"] = raw_text
+        evidence = {"phase": "concise_json_recovery", "trigger": str(error),
+                    "raw_response": raw_text}
+        record["generation_attempts"].append(evidence)
+        try:
+            normalizations = []
+            answer = parse_review(raw_text, normalizations)
+            if normalizations:
+                evidence["normalizations"] = normalizations
+            return answer
+        except ValueError as recovery_error:
+            evidence["schema_error"] = str(recovery_error)
+            raise
     if not isinstance(candidate, dict):
         raise ValueError("Expected a JSON object before focused schema repair")
     repair_fields = invalid_review_fields(candidate)
@@ -359,7 +383,8 @@ def request_valid_review(generate, record):
 protocol = {
     "review_type": "model", "human_review": "pending", "model_id": MODEL_ID,
     "model_revision": MODEL_REVISION, "quantization": "4-bit NF4 double quantization, float16 compute",
-    "prompt": REVIEW_PROMPT, "max_new_tokens": 512, "temperature": 0,
+    "prompt": REVIEW_PROMPT, "max_new_tokens": 256, "temperature": 0,
+    "repetition_penalty": 1.05, "no_repeat_ngram_size": 8,
     "schema_retry_limit": 2, "schema_protocol": "strict_fields_then_focused_invalid_or_missing_fields_v3",
     "scope": "development Baseline/Repeat, clean plus frozen challenge; no held-out audio",
     "amendment": "User requested model review after development metrics and before held-out access.",
@@ -398,7 +423,9 @@ for index, row in queue.iterrows():
                                    return_tensors="pt", padding=True).to("cuda")
                 with torch.inference_mode():
                     generated = reviewer.generate(**inputs, return_audio=False, do_sample=False,
-                                                  max_new_tokens=protocol["max_new_tokens"])
+                                                  max_new_tokens=protocol["max_new_tokens"],
+                                                  repetition_penalty=protocol["repetition_penalty"],
+                                                  no_repeat_ngram_size=protocol["no_repeat_ngram_size"])
                 generated = generated[:, inputs.input_ids.shape[1]:]
                 return processor.batch_decode(generated, skip_special_tokens=True,
                                                clean_up_tokenization_spaces=False)[0]
