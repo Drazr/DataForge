@@ -1,0 +1,46 @@
+{
+  "audit_schema": "conditioned_ab_archive_v1",
+  "source_archive": "conditioned_ab_6bd1eb398398af0e.zip",
+  "source_archive_bytes": 142573883,
+  "source_archive_sha256": "2054a2afdaba34afdf366e69b7103327c836d0ae8320d1bf1ea236298162b281",
+  "archive_entries": 1832,
+  "archive_crc_check": "pass",
+  "safe_paths": true,
+  "run_id": "6bd1eb398398af0edcbe31d260e15fa71a6e5aca1c3d9abc117aef7028d71966",
+  "challenge_conditions": [
+    "competing_speech_-5dB"
+  ],
+  "development_metric_screen_pass": [
+    "repeat"
+  ],
+  "review_model": "Qwen/Qwen2.5-Omni-7B",
+  "review_quantization": "4-bit NF4 double quantization, float16 compute",
+  "review_records": 56,
+  "audio_hashes_verified": 56,
+  "review_matrix_complete": true,
+  "summary_complete": true,
+  "facts_preserved": false,
+  "quality_acceptable": false,
+  "model_gate_pass": false,
+  "selection_created": false,
+  "heldout_executed": false,
+  "conclusion": "no winner: Repeat passed development metrics but failed the conservative model listening gate",
+  "variant_review_statistics": {
+    "baseline": {
+      "clips": 28,
+      "fact_recovery_mean": 0.673469387755102,
+      "fact_recovery_min": 0.14285714285714285,
+      "perfect_fact_clips": 7,
+      "acceptable_naturalness_clips": 28,
+      "none_or_minor_artifact_clips": 28
+    },
+    "repeat": {
+      "clips": 28,
+      "fact_recovery_mean": 0.6887755102040816,
+      "fact_recovery_min": 0.2857142857142857,
+      "perfect_fact_clips": 6,
+      "acceptable_naturalness_clips": 27,
+      "none_or_minor_artifact_clips": 28
+    }
+  }
+}

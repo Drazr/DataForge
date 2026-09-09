@@ -1,0 +1,17 @@
+{
+  "texts_by_split": {
+    "dev": 21,
+    "heldout": 9
+  },
+  "critical_texts_by_split": {
+    "dev": 7,
+    "heldout": 3
+  },
+  "noise_sources": 2,
+  "synthesis_repeats": 2,
+  "snrs_db": [
+    0,
+    -5
+  ],
+  "evidence_level": "pilot; ASR lexical proxy, not established human comprehension"
+}

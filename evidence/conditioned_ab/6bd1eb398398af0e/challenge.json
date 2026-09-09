@@ -1,0 +1,6 @@
+{
+  "conditions": [
+    "competing_speech_-5dB"
+  ],
+  "basis": "development baseline only"
+}

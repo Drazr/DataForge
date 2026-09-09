@@ -1,0 +1,16 @@
+{
+  "review_type": "model",
+  "human_review": "pending",
+  "model_id": "Qwen/Qwen2.5-Omni-7B",
+  "model_revision": null,
+  "quantization": "4-bit NF4 double quantization, float16 compute",
+  "prompt": "Listen to this recording. It may contain competing speakers.\nFocus on the appointment, payment, and reference-code message, not unrelated background reading.\nTranscribe only words actually audible from the target speaker. Preserve repetitions and contradictions.\nWrite [unclear] instead of guessing masked words. Do not infer names, numbers, dates, times, or negations.\nKeep the transcript under 100 words. If background speech loops, transcribe it at most twice and write\n[background repetition continues]; do not repeat a phrase until the response is truncated.\nAssess target speech clarity and audible synthesis artifacts; background speech alone is not an artifact.\nReturn ONLY valid JSON with these exact fields: transcript (string), clarity (clear|partial|unintelligible),\ncompeting_voice (boolean), artifacts (none|minor|severe|uncertain),\nnaturalness (acceptable|unacceptable|uncertain), notes (string).",
+  "max_new_tokens": 256,
+  "temperature": 0,
+  "repetition_penalty": 1.05,
+  "no_repeat_ngram_size": 8,
+  "schema_retry_limit": 2,
+  "schema_protocol": "strict_fields_then_focused_invalid_or_missing_fields_v3",
+  "scope": "development Baseline/Repeat, clean plus frozen challenge; no held-out audio",
+  "amendment": "User requested model review after development metrics and before held-out access."
+}

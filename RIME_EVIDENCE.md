@@ -1,4 +1,4 @@
-# Delivery A/B evidence — pending execution
+# Delivery A/B evidence — no winner
 
 ## Input
 
@@ -6,27 +6,31 @@ A copied, complete Noise-Masking baseline.
 The frozen producer manifest supplies the scoring configuration, corpus, repeats,
 noise sources and SNR conditions. This branch imports baseline scores/audio.
 
-## Proposed claim and screening
+## Screening result
 
-One delivery intervention improves ASR-based critical-fact recovery under the
-selected noisy simulated phone conditions. No measured gain is claimed yet.
+Repeat was the sole development metric-screen pass: fact-recovery gain
+`+0.08163265`, WER delta `-0.010833`, duration ratio `1.08410`, and DNSMOS OVRL
+delta `+0.0275485`. Clauses and Slow failed the frozen metric thresholds.
 
-Choose one or two development conditions where the same cleanly recovered fact
-fails in every noisy repeat on at least two texts. Compare each delivery change
-separately. The frozen defaults require at least 0.05 mean fact-recovery gain,
-at most 0.02 WER increase, at most 1.5x duration and at most 0.15 DNSMOS OVRL decline.
-Human review must approve facts, negation and naturalness before candidate selection.
+At the user's request, a Qwen2.5-Omni-7B model review was added as a documented
+post-metrics amendment. It covered 56 Baseline/Repeat clips across seven critical
+development texts, two replicates, clean audio, and `competing_speech_-5dB`.
+All records and their referenced audio hashes passed the archive audit. Repeat
+failed both the conservative fact-preservation and quality gates. Model review is
+not calibrated human listening, and human review remains pending.
 
-Run Cells 1–11 of `colab_noise_ab.py`. Freeze the candidate before running held-out
-texts and review their audio. No winner or failed validation is a valid result.
+The final outcome is **no winner**. No `selection.json` was created and the held-out
+split was not run. The original Noise-Masking baseline therefore remains unchanged.
 
 ## Evidence to retain
 
-- Copied `inputs/noise_masking/<run-id>/` and its `handoff.json`.
-- `manifest.json`, `imported_baseline.json`, `evidence_scope.json` and cache ledger.
-- Challenge and selection locks; development/held-out comparison CSVs.
-- `results.csv`, audio, transcripts, per-fact details and human listening notes.
+- The full 142,573,883-byte archive remains external; its SHA-256 is
+  `2054a2afdaba34afdf366e69b7103327c836d0ae8320d1bf1ea236298162b281`.
+- Compact evidence is committed under `evidence/conditioned_ab/6bd1eb398398af0e/`:
+  audit, frozen challenge, development comparisons, review protocol and summary,
+  all 56 final judgments, fact details, and referenced-audio SHA-256 values.
+- `scripts/audit_conditioned_ab_archive.py` reproduces archive integrity, matrix,
+  schema, audio-hash, metric-screen, and model-gate checks.
 
-New output goes to `MyDrive/DataForge/delivery_ab/outputs/<run-id>/`.
 The small default corpus, selected recordings, ASR proxy and simulated codec
 support a pilot only. This branch does not perform real phone-provider validation.

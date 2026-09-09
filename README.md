@@ -4,7 +4,7 @@ Branch: `noise-conditioned-ab`.
 
 Project scope: **Noise-Masking Test → Noise-Conditioned Delivery A/B**. Grid/Breakpoint Analysis was retired to prioritize this direct intervention test. Shared planning documents live only on `main`: [hackathon guidelines](https://github.com/Drazr/DataForge/blob/main/HACKATHON_GUIDELINES.md), [implementation roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md), and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods remain unchanged.
 
-Copy the eleven cells in [colab_noise_ab.py](colab_noise_ab.py) into Colab, preserving
+Copy the thirteen cells in [colab_noise_ab.py](colab_noise_ab.py) into Colab, preserving
 the three-blank-line cell separators. Cells 1–2 mount Drive and clone this branch.
 
 This workflow starts from a completed Noise-Masking baseline. It copies the needed
@@ -22,10 +22,12 @@ The verified stress-baseline review is included under
 `competing_speech_-5dB` challenge. Cell 4 copies the complete original run and
 synthesis cache from Drive; the review is not a replacement for that handoff.
 Development A/B metrics have been reported from Colab: Repeat passed the metric
-screen; Clauses and Slow failed. Review and candidate selection are separate gates,
-and held-out validation remains pending. The user requested a delegated
-[local model review](docs/MODEL_REVIEW.md), recorded as a protocol amendment with
-human review explicitly pending. Local checks:
+screen; Clauses and Slow failed. The requested delegated
+[local model review](docs/MODEL_REVIEW.md) covered all 56 Baseline/Repeat clips and
+failed Repeat on fact preservation and quality. No candidate was selected and the
+held-out split was intentionally not run. Human review remains explicitly pending;
+the model result is not presented as a human-comprehension claim. The compact,
+audited result is under `evidence/conditioned_ab/6bd1eb398398af0e/`. Local checks:
 `python -m unittest discover -s tests -v` after installing dependencies and FFmpeg.
 
 Session problems, fixes and the current baseline eligibility decision are tracked

@@ -145,3 +145,9 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     before allowed-value membership. Lists and other wrong types become normal
     validation failures and request only the affected field; they are never
     flattened or silently converted.
+26. The completed archive contained 56/56 successful model reviews. Repeat remained
+    the only development metric-screen pass, but failed the conservative model
+    fact-preservation and quality gates. Recorded a no-winner outcome, left the
+    baseline unchanged, and did not create a selection or access held-out results.
+    The archive validator verified ZIP integrity, safe paths, the complete review
+    matrix, schemas, all 56 referenced-audio hashes, and a recomputed failing gate.
