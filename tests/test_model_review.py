@@ -21,7 +21,7 @@ class NotebookSchemaTests(unittest.TestCase):
         # Load only the pure helpers, without executing Colab or loading a GPU model.
         tree = ast.parse((ROOT / "colab_noise_ab.py").read_text())
         helpers = [node for node in tree.body if isinstance(node, ast.FunctionDef)
-                   and node.name in {"parse_review", "request_valid_review"}]
+                   and node.name in {"parse_review", "invalid_review_fields", "request_valid_review"}]
         cls.scope = {"json": json, "re": re, "REVIEW_PROMPT": "full schema"}
         exec(compile(ast.Module(body=helpers, type_ignores=[]), "notebook_helpers", "exec"), cls.scope)
 
@@ -42,17 +42,18 @@ class NotebookSchemaTests(unittest.TestCase):
         self.assertIn("artifact", corrections[1])
 
     def test_persistent_missing_field_uses_focused_audio_judgment(self):
-        incomplete = {"transcript": "Audible speech", "clarity": "clear",
+        incomplete = {"transcript": "Audible speech", "clarity": "acceptable",
                       "competing_voice": False, "naturalness": "acceptable", "notes": "Clear"}
         instructions = []
         def generate(instruction):
             instructions.append(instruction)
-            return json.dumps(incomplete if len(instructions) < 3 else {"artifacts": "none"})
+            return json.dumps(incomplete if len(instructions) < 3 else
+                              {"artifacts": "none", "clarity": "clear"})
         record = {}
         result = self.scope["request_valid_review"](generate, record)
         self.assertEqual(result["artifacts"], "none")
         self.assertEqual(len(record["generation_attempts"]), 3)
-        self.assertEqual(record["generation_attempts"][2]["requested_fields"], ["artifacts"])
+        self.assertEqual(record["generation_attempts"][2]["requested_fields"], ["artifacts", "clarity"])
         self.assertIn("only the missing", instructions[2])
 
     def test_invalid_focused_response_stops_after_three_attempts(self):

@@ -107,3 +107,9 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     converts aliases nor supplies default labels. All raw responses and the
     requested field list remain in `generation_attempts`; a malformed focused
     response still stops the run at that clip.
+20. The second full response then used `clarity: acceptable`, which belongs to
+    the naturalness vocabulary, while its focused response correctly supplied
+    `artifacts`. The focused pass now detects invalid values as well as missing
+    keys and requests all affected fields together. For this observed response
+    it requests `artifacts` and `clarity`; it does not translate `acceptable`
+    into `clear` or reuse the earlier boolean `artifact` alias.

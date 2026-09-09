@@ -266,8 +266,20 @@ def parse_review(text):
         raise ValueError("Invalid quality label")
     return answer
 
+def invalid_review_fields(answer):
+    validators = {
+        "transcript": lambda value: isinstance(value, str) and bool(value.strip()),
+        "clarity": lambda value: value in {"clear", "partial", "unintelligible"},
+        "competing_voice": lambda value: isinstance(value, bool),
+        "artifacts": lambda value: value in {"none", "minor", "severe", "uncertain"},
+        "naturalness": lambda value: value in {"acceptable", "unacceptable", "uncertain"},
+        "notes": lambda value: isinstance(value, str),
+    }
+    return sorted(key for key, validator in validators.items()
+                  if key not in answer or not validator(answer[key]))
+
 def request_valid_review(generate, record):
-    """Retry the full schema once, then request only still-missing fields."""
+    """Retry the full schema once, then repair missing or invalid fields."""
     correction = ""
     record["generation_attempts"] = []
     for attempt in range(2):
@@ -295,10 +307,11 @@ def request_valid_review(generate, record):
     candidate = json.loads(candidate_text)
     if not isinstance(candidate, dict):
         raise ValueError("Expected a JSON object before focused schema repair")
-    required = {"transcript", "clarity", "competing_voice", "artifacts", "naturalness", "notes"}
-    retained = {key: value for key, value in candidate.items() if key in required}
-    missing = sorted(required - set(retained))
-    if not missing:
+    repair_fields = invalid_review_fields(candidate)
+    retained = {key: value for key, value in candidate.items()
+                if key not in repair_fields and key in {
+                    "transcript", "clarity", "competing_voice", "artifacts", "naturalness", "notes"}}
+    if not repair_fields:
         return parse_review(json.dumps(retained))
     field_rules = {
         "transcript": "a nonempty string containing only audible target-speaker words; use [unclear] rather than guessing",
@@ -308,7 +321,7 @@ def request_valid_review(generate, record):
         "naturalness": "one string: acceptable, unacceptable, or uncertain",
         "notes": "a brief string",
     }
-    requested = {key: field_rules[key] for key in missing}
+    requested = {key: field_rules[key] for key in repair_fields}
     focused_prompt = (
         "Listen to this recording again and judge only the missing review fields below. "
         "Background competing speech is not a synthesis artifact. Do not infer masked facts. "
@@ -316,12 +329,12 @@ def request_valid_review(generate, record):
         + json.dumps(requested, indent=2)
     )
     raw_text = generate(focused_prompt)
-    evidence = {"phase": "missing_fields", "requested_fields": missing,
+    evidence = {"phase": "invalid_or_missing_fields", "requested_fields": repair_fields,
                 "raw_response": raw_text}
     record["generation_attempts"].append(evidence)
     supplement_text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.I)
     supplement = json.loads(supplement_text)
-    if not isinstance(supplement, dict) or set(supplement) != set(missing):
+    if not isinstance(supplement, dict) or set(supplement) != set(repair_fields):
         evidence["schema_error"] = "Focused response did not contain exactly the requested fields"
         raise ValueError(evidence["schema_error"])
     merged = {**retained, **supplement}
@@ -332,7 +345,7 @@ protocol = {
     "review_type": "model", "human_review": "pending", "model_id": MODEL_ID,
     "model_revision": MODEL_REVISION, "quantization": "4-bit NF4 double quantization, float16 compute",
     "prompt": REVIEW_PROMPT, "max_new_tokens": 512, "temperature": 0,
-    "schema_retry_limit": 2, "schema_protocol": "strict_fields_then_focused_missing_fields_v2",
+    "schema_retry_limit": 2, "schema_protocol": "strict_fields_then_focused_invalid_or_missing_fields_v3",
     "scope": "development Baseline/Repeat, clean plus frozen challenge; no held-out audio",
     "amendment": "User requested model review after development metrics and before held-out access.",
 }
