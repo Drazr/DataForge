@@ -2,7 +2,7 @@
 
 ## Selected tests only
 
-The active order is **Noise-Masking Test → Noise-Conditioned Delivery A/B**, in two separate Colab notebooks. Grid/Breakpoint Analysis was retired to prioritize the direct intervention test after a qualifying stress baseline. Catalog engineering methods remain unchanged.
+The Noise-Masking and Delivery A/B pilots completed development evaluation with no A/B candidate promoted. The next test is [Noise grid v2](docs/NOISE_GRID_V2_PROTOCOL.md), which defines expanded noise/SNR coverage, window-based SNR calibration, an exploratory 90% fact-recovery target, and bounded refinement. Its implementation is pending. The pilot controls below describe the earlier workflows; the v2 protocol governs the new experiment. Catalog engineering methods remain undecided.
 
 Use the [implementation roadmap](rime_implementation_roadmap.md), each test branch's README/runbook, and [handoff instructions](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md) for setup and file locations. The [main README](README.md) links both test branches.
 

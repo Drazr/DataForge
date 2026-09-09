@@ -1,4 +1,4 @@
-# Two independent workflow branches
+# Experiment branches and evidence handoffs
 
 ## Current repository layout
 
@@ -17,7 +17,7 @@ code revisions during a frozen run without checking producer/consumer compatibil
 
 ## Execution and evidence transfer
 
-Active experiments only, in the chosen order: **Noise-Masking Test → Noise-Conditioned Delivery A/B**. See the shared documents on `main`: the [roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md) and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged and outside this scope decision.
+The two original pilots completed development evaluation. Next is [Noise grid v2](NOISE_GRID_V2_PROTOCOL.md), with implementation planned on `codex/noise-grid-v2`. That branch and its new notebook are not yet created. It will verify and reuse the original clean baseline audio and frozen evaluator configuration while writing a separate run with versioned noise calibration. The original experiment branches remain available for reproducibility.
 
 Delivery A/B requires the complete Noise-Masking output and synthesis cache. It imports the frozen baseline without rerunning it.
 
@@ -38,11 +38,13 @@ Copies fail on conflicts rather than overwriting different evidence. Drive retai
 producer outputs, consumer outputs, large downloaded datasets and model snapshots.
 Download/model assets remain shared in Drive; they are not experimental outputs.
 
-There are no measured outputs to transfer yet. Consumer cells perform the copies
-once the producer finishes. Small copied evidence files can be committed to the
-consumer branch after review; raw audio/models remain ignored by Git. Nothing is
-automatically uploaded or mixed into another branch while an experiment runs.
+Measured baseline and A/B outputs now exist. The A/B audit and compact evidence
+were committed at `4ddef62` on `noise-conditioned-ab`; the full ZIP remains external.
+The outcome is no promoted candidate, with no held-out run. Small copied evidence
+files are retained after review; raw audio/models remain ignored by Git. V2 must
+not pool old noisy measurements with its new calibration.
 
 Persistent Drive folders under `MyDrive/DataForge/`:
 - `noise_masking/outputs/<run-id>/`: measured baseline and diagnostic exports.
 - `delivery_ab/outputs/<run-id>/`: copied baseline plus A/B and held-out evidence.
+- `noise_grid_v2/outputs/<run-id>/`: planned v2 measurements and analysis, separate from pilot results.
