@@ -248,7 +248,7 @@ def stable_hash(path):
             h.update(block)
     return h.hexdigest()
 
-def parse_review(text):
+def parse_review(text, normalizations=None):
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.I)
     answer = json.loads(text)
     required = {"transcript", "clarity", "competing_voice", "artifacts", "naturalness", "notes"}
@@ -260,6 +260,13 @@ def parse_review(text):
         raise ValueError("Expected a nonempty transcript string")
     if not isinstance(answer["notes"], str):
         raise ValueError("Expected notes to be a string")
+    if isinstance(answer["competing_voice"], str) and answer["competing_voice"].strip().lower() in {"true", "false"}:
+        original = answer["competing_voice"]
+        answer["competing_voice"] = original.strip().lower() == "true"
+        if normalizations is not None:
+            normalizations.append({"field": "competing_voice", "from": original,
+                                   "to": answer["competing_voice"],
+                                   "rule": "exact_case_insensitive_boolean_string"})
     if answer["clarity"] not in {"clear", "partial", "unintelligible"} or not isinstance(answer["competing_voice"], bool):
         raise ValueError("Invalid clarity/competing_voice")
     if answer["artifacts"] not in {"none", "minor", "severe", "uncertain"} or answer["naturalness"] not in {"acceptable", "unacceptable", "uncertain"}:
@@ -290,7 +297,11 @@ def request_valid_review(generate, record):
                     "correction": correction}
         record["generation_attempts"].append(evidence)
         try:
-            return parse_review(raw_text)
+            normalizations = []
+            answer = parse_review(raw_text, normalizations)
+            if normalizations:
+                evidence["normalizations"] = normalizations
+            return answer
         except ValueError as error:
             evidence["schema_error"] = str(error)
             if attempt == 0:
@@ -339,7 +350,11 @@ def request_valid_review(generate, record):
         raise ValueError(evidence["schema_error"])
     merged = {**retained, **supplement}
     record["raw_response"] = json.dumps(merged)
-    return parse_review(record["raw_response"])
+    normalizations = []
+    answer = parse_review(record["raw_response"], normalizations)
+    if normalizations:
+        evidence["normalizations"] = normalizations
+    return answer
 
 protocol = {
     "review_type": "model", "human_review": "pending", "model_id": MODEL_ID,

@@ -69,6 +69,17 @@ class NotebookSchemaTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.scope["parse_review"]("[]")
 
+    def test_exact_boolean_string_is_normalized_and_audited(self):
+        response = {"transcript": "speech", "clarity": "clear", "competing_voice": "false",
+                    "artifacts": "none", "naturalness": "acceptable", "notes": ""}
+        normalizations = []
+        result = self.scope["parse_review"](json.dumps(response), normalizations)
+        self.assertIs(result["competing_voice"], False)
+        self.assertEqual(normalizations[0]["field"], "competing_voice")
+        response["competing_voice"] = "no"
+        with self.assertRaises(ValueError):
+            self.scope["parse_review"](json.dumps(response))
+
 
 class ModelReviewTests(unittest.TestCase):
     def record(self, **overrides):

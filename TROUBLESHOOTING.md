@@ -120,3 +120,9 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     inventory and run ID. Existing path-sensitive provenance migrates only after
     the current receipt, complete row set, audio hashes and saved baseline rows
     pass their existing checks; actual content changes still fail.
+22. Clip 10's focused response supplied every requested field but encoded
+    `competing_voice` as JSON string `"false"` instead of boolean `false`.
+    Cell 10 now performs a narrow, lossless normalization for case-insensitive
+    exact strings `"true"` and `"false"`, records the conversion beside the raw
+    response, and continues. Ambiguous strings such as `"no"`, numbers and all
+    invalid label values still fail validation.
