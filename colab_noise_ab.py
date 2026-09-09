@@ -273,11 +273,16 @@ for index, row in queue.iterrows():
     destination = MODEL_REVIEW_ROOT / "responses" / f"{index:04d}.json"
     audio_path = Path(row.audio_path)
     audio_hash = stable_hash(audio_path)
+    record = None
     if destination.exists():
         record = json.loads(destination.read_text())
         if record.get("audio_sha256") != audio_hash or record.get("model_id") != MODEL_ID:
             raise ValueError("Existing review cache belongs to another input/model; use a new output folder")
-    else:
+    if record is None or record.get("status") != "ok":
+        if record is not None:
+            # Retain the failed attempt as evidence before retrying it.
+            attempt = time.time_ns()
+            write_json(MODEL_REVIEW_ROOT / "failed_attempts" / f"{index:04d}_{attempt}.json", record)
         record = {"text_id": row.text_id, "variant": row.variant, "replicate": int(row.replicate),
                   "condition": row.condition, "audio_path": str(audio_path), "audio_sha256": audio_hash,
                   "model_id": MODEL_ID, "created_utc": datetime.now(timezone.utc).isoformat()}
@@ -286,7 +291,7 @@ for index, row in queue.iterrows():
         started = time.monotonic()
         try:
             prompt = processor.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
-            audios, images, videos = process_mm_info(conversation)
+            audios, images, videos = process_mm_info(conversation, use_audio_in_video=False)
             inputs = processor(text=prompt, audio=audios, images=images, videos=videos,
                                return_tensors="pt", padding=True).to("cuda")
             with torch.inference_mode():

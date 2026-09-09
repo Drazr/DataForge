@@ -87,3 +87,9 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     loaded matching reviewer when the cell is rerun. This avoids another model
     load or download in the same runtime. Hugging Face token, RoPE-key, eager-to-
     SDPA and text-only audio-output warnings observed during loading are nonfatal.
+17. All 56 model-review clips then recorded a TypeError before inference because
+    `process_mm_info` requires `use_audio_in_video`. Cell 10 now passes `False`
+    for the audio-only queue. Reruns retry saved errors, preserving each previous
+    failed attempt under `failed_attempts/`, while retaining successful reviews
+    and checking cached input/model identity. Rerun Cell 10 in the same runtime;
+    keep selection paused until the review completes successfully.
