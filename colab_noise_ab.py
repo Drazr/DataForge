@@ -249,25 +249,57 @@ def stable_hash(path):
     return h.hexdigest()
 
 def parse_review(text):
-    text = re.sub(r"^```(?:json)?\\s*|\\s*```$", "", text.strip(), flags=re.I)
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.I)
     answer = json.loads(text)
     required = {"transcript", "clarity", "competing_voice", "artifacts", "naturalness", "notes"}
-    if set(answer) != required or not isinstance(answer["transcript"], str) or not answer["transcript"].strip():
-        raise ValueError("Invalid model JSON")
+    if not isinstance(answer, dict):
+        raise ValueError("Expected a JSON object")
+    if set(answer) != required:
+        raise ValueError(f"Missing fields: {sorted(required - set(answer))}; unexpected fields: {sorted(set(answer) - required)}")
+    if not isinstance(answer["transcript"], str) or not answer["transcript"].strip():
+        raise ValueError("Expected a nonempty transcript string")
+    if not isinstance(answer["notes"], str):
+        raise ValueError("Expected notes to be a string")
     if answer["clarity"] not in {"clear", "partial", "unintelligible"} or not isinstance(answer["competing_voice"], bool):
         raise ValueError("Invalid clarity/competing_voice")
     if answer["artifacts"] not in {"none", "minor", "severe", "uncertain"} or answer["naturalness"] not in {"acceptable", "unacceptable", "uncertain"}:
         raise ValueError("Invalid quality label")
     return answer
 
+def request_valid_review(generate, record):
+    """Retry a schema error once without supplying facts or quality answers."""
+    correction = ""
+    record["generation_attempts"] = []
+    for attempt in range(2):
+        raw_text = generate(correction)
+        record["raw_response"] = raw_text
+        evidence = {"raw_response": raw_text, "correction": correction}
+        record["generation_attempts"].append(evidence)
+        try:
+            return parse_review(raw_text)
+        except ValueError as error:
+            evidence["schema_error"] = str(error)
+            if attempt == 1:
+                raise
+            correction = (
+                "\nYour previous response did not match the JSON schema: " + str(error)
+                + ". Listen to the audio and return all six required fields exactly as specified. "
+                "Include clarity and artifacts (plural); artifacts must be a string label, not a boolean. "
+                "Do not guess missing speech or invent quality judgments to satisfy the format. "
+                "Return only the JSON object and keep notes brief."
+            )
+
 protocol = {
     "review_type": "model", "human_review": "pending", "model_id": MODEL_ID,
     "model_revision": MODEL_REVISION, "quantization": "4-bit NF4 double quantization, float16 compute",
-    "prompt": REVIEW_PROMPT, "max_new_tokens": 160, "temperature": 0,
+    "prompt": REVIEW_PROMPT, "max_new_tokens": 512, "temperature": 0,
+    "schema_retry_limit": 1, "schema_protocol": "strict_fields_with_one_retry_v1",
     "scope": "development Baseline/Repeat, clean plus frozen challenge; no held-out audio",
     "amendment": "User requested model review after development metrics and before held-out access.",
 }
 write_json(MODEL_REVIEW_ROOT / "protocol.json", protocol)
+summary = {**protocol, "complete": False, "model_gate_pass": False}
+write_json(MODEL_REVIEW_ROOT / "summary.json", summary)
 records = []
 for index, row in queue.iterrows():
     destination = MODEL_REVIEW_ROOT / "responses" / f"{index:04d}.json"
@@ -286,21 +318,24 @@ for index, row in queue.iterrows():
         record = {"text_id": row.text_id, "variant": row.variant, "replicate": int(row.replicate),
                   "condition": row.condition, "audio_path": str(audio_path), "audio_sha256": audio_hash,
                   "model_id": MODEL_ID, "created_utc": datetime.now(timezone.utc).isoformat()}
+        record["generation_protocol"] = protocol
         conversation = [{"role": "user", "content": [
             {"type": "audio", "audio": str(audio_path)}, {"type": "text", "text": REVIEW_PROMPT}]}]
         started = time.monotonic()
         try:
-            prompt = processor.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
-            audios, images, videos = process_mm_info(conversation, use_audio_in_video=False)
-            inputs = processor(text=prompt, audio=audios, images=images, videos=videos,
-                               return_tensors="pt", padding=True).to("cuda")
-            with torch.inference_mode():
-                generated = reviewer.generate(**inputs, return_audio=False, do_sample=False, max_new_tokens=160)
-            generated = generated[:, inputs.input_ids.shape[1]:]
-            raw_text = processor.batch_decode(generated, skip_special_tokens=True,
-                                              clean_up_tokenization_spaces=False)[0]
-            record["raw_response"] = raw_text
-            judgment = parse_review(raw_text)
+            def generate_review(correction):
+                conversation[0]["content"][1]["text"] = REVIEW_PROMPT + correction
+                prompt = processor.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
+                audios, images, videos = process_mm_info(conversation, use_audio_in_video=False)
+                inputs = processor(text=prompt, audio=audios, images=images, videos=videos,
+                                   return_tensors="pt", padding=True).to("cuda")
+                with torch.inference_mode():
+                    generated = reviewer.generate(**inputs, return_audio=False, do_sample=False,
+                                                  max_new_tokens=protocol["max_new_tokens"])
+                generated = generated[:, inputs.input_ids.shape[1]:]
+                return processor.batch_decode(generated, skip_special_tokens=True,
+                                               clean_up_tokenization_spaces=False)[0]
+            judgment = request_valid_review(generate_review, record)
             facts = next(item["facts"] for item in corpus if item["id"] == row.text_id)
             recovery, details = fact_score(judgment["transcript"], facts)
             record.update(status="ok", judgment=judgment, fact_recovery=recovery, fact_details=details)
@@ -310,6 +345,9 @@ for index, row in queue.iterrows():
         write_json(destination, record)
     records.append(record)
     print(f"{index + 1}/{expected_rows}: {row.text_id} {row.variant} {row.condition} → {record['status']}")
+    if record.get("status") == "error":
+        print("Saved error:", record.get("error"))
+        raise RuntimeError("Review paused at the first failed clip; share the saved error before rerunning Cell 10")
 
 valid = [record for record in records if record.get("status") == "ok"]
 repeat = [record for record in valid if record["variant"] == "repeat"]

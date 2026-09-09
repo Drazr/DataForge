@@ -93,3 +93,11 @@ does not qualify, A/B is inapplicable and neither downstream workflow should run
     failed attempt under `failed_attempts/`, while retaining successful reviews
     and checking cached input/model identity. Rerun Cell 10 in the same runtime;
     keep selection paused until the review completes successfully.
+18. Inference returned readable JSON but omitted `clarity` and used boolean
+    `artifact` instead of the required string `artifacts`. Keep strict validation:
+    do not manufacture missing judgments. Cell 10 now provides field-specific
+    feedback and retries malformed output once, saving both raw attempts and
+    generation settings. Increased output allowance from 160 to 512 tokens to
+    accommodate transcription plus all review fields; this does not guarantee
+    schema compliance. Fixed Markdown fence parsing, and stop at the first
+    remaining error to avoid spending GPU time on 56 repeated failures.

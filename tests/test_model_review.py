@@ -1,7 +1,9 @@
 import copy
+import ast
 import importlib.util
 import io
 import json
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +13,46 @@ ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("review_audio", ROOT / "scripts/review_development_audio.py")
 review = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(review)
+
+
+class NotebookSchemaTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Load only the pure helpers, without executing Colab or loading a GPU model.
+        tree = ast.parse((ROOT / "colab_noise_ab.py").read_text())
+        helpers = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                   and node.name in {"parse_review", "request_valid_review"}]
+        cls.scope = {"json": json, "re": re}
+        exec(compile(ast.Module(body=helpers, type_ignores=[]), "notebook_helpers", "exec"), cls.scope)
+
+    def test_reported_schema_failure_retried_without_inventing_fields(self):
+        bad = {"transcript": "Audible speech", "competing_voice": False, "artifact": False,
+               "naturalness": "acceptable", "notes": "Clear"}
+        good = {"transcript": "Audible speech", "competing_voice": False, "artifacts": "uncertain",
+                "clarity": "partial", "naturalness": "uncertain", "notes": "Unsure"}
+        corrections = []
+        def generate(correction):
+            corrections.append(correction)
+            return json.dumps(bad if len(corrections) == 1 else good)
+        record = {}
+        result = self.scope["request_valid_review"](generate, record)
+        self.assertEqual(result, good)
+        self.assertEqual(len(record["generation_attempts"]), 2)
+        self.assertIn("clarity", corrections[1])
+        self.assertIn("artifact", corrections[1])
+
+    def test_invalid_responses_stop_after_two_attempts(self):
+        record = {}
+        with self.assertRaises(ValueError):
+            self.scope["request_valid_review"](lambda _: '{"transcript":"speech"}', record)
+        self.assertEqual(len(record["generation_attempts"]), 2)
+
+    def test_fenced_valid_json_accepted_and_nonobject_rejected(self):
+        good = {"transcript": "speech", "clarity": "clear", "competing_voice": False,
+                "artifacts": "none", "naturalness": "acceptable", "notes": ""}
+        self.assertEqual(self.scope["parse_review"]("```json\n" + json.dumps(good) + "\n```"), good)
+        with self.assertRaises(ValueError):
+            self.scope["parse_review"]("[]")
 
 
 class ModelReviewTests(unittest.TestCase):
