@@ -11,7 +11,9 @@ The producer uses the seven critical development texts and two already-cached
 Rime syntheses per text. Its complete core is **294 scores**: 14 clean controls
 plus 280 noisy clips. It does not synthesize new speech and does not access the
 held-out split. Each utterance uses an actual non-looping noise window whose RMS
-is calibrated separately; nominal and measured SNR are retained.
+is calibrated separately; nominal and measured SNR are retained. Before scoring,
+one global speech level is chosen from an exact peak audit of every planned
+speech/noise/SNR combination, preventing clipping without per-clip limiting.
 
 Run the ten cells in [colab_noise_masking.py](colab_noise_masking.py) in a CPU
 Colab notebook. Faster-Whisper uses CPU INT8; no GPU quota is required. The

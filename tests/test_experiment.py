@@ -13,7 +13,8 @@ import soundfile as sf
 
 from dataforge.experiment import (Experiment, fact_score, level, load_corpus,
                                  mix_noise, noise_window, phone_roundtrip, request_audio,
-                                 active_rms, level_active, validate_challenges, save_json)
+                                 active_rms, level_active, safe_speech_level_dbfs,
+                                 validate_challenges, save_json)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -74,6 +75,23 @@ class AudioTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "too short"):
             noise_window(source, 8, 3, wrap=False)
 
+    def test_global_headroom_audit_prevents_grid_clipping(self):
+        length = 8000
+        speech = np.sin(2 * np.pi * 220 * np.arange(length) / 8000).astype(np.float32)
+        noise = np.full(length, 0.001, dtype=np.float32)
+        noise[::800] = 0.9
+        chosen, audit = safe_speech_level_dbfs([speech], [noise], [15, 5, -5], -26)
+        self.assertLess(chosen, -26)
+        leveled = level_active(speech, chosen)
+        for snr in (15, 5, -5):
+            mixture, measured = mix_noise(
+                leveled, noise, snr, speech_reference_rms=active_rms(leveled),
+                noise_reference_rms=np.sqrt(np.mean(noise.astype(np.float64) ** 2)),
+            )
+            self.assertLess(np.max(np.abs(mixture)), 0.99)
+            self.assertAlmostEqual(measured, snr, places=5)
+        self.assertLessEqual(audit["predicted_max_peak"], audit["peak_limit"])
+
     def test_actual_ffmpeg_pcmu_roundtrip(self):
         try:
             import imageio_ffmpeg
@@ -125,6 +143,8 @@ class AudioTests(unittest.TestCase):
         self.assertIn('if planned_scores != 294:', source)
         self.assertIn('if len(corpus) != 7 or any(item not in source_manifest["corpus"] for item in corpus):', source)
         self.assertIn('synthesis_cache_root=source_cache_root', source)
+        self.assertIn('safe_speech_level_dbfs(', source)
+        self.assertIn('headroom_audit.json', source)
         self.assertIn('if missing_cache:', source)
         self.assertNotIn('["nvidia-smi", "-L"]', source)
         self.assertIn('if not baseline.synthesis_cached.all():', source)

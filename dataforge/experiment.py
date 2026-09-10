@@ -202,6 +202,38 @@ def mix_noise(speech, noise, snr_db, *, speech_reference_rms=None, noise_referen
     return mixture.astype(np.float32), float(measured)
 
 
+def safe_speech_level_dbfs(speeches, noise_sources, snrs_db, preferred_dbfs,
+                           *, peak_limit=0.90, step_db=0.5):
+    """Choose one pre-score speech level that keeps the complete exact grid below peak_limit."""
+    if not speeches or not noise_sources or not snrs_db:
+        raise ValueError("Safe-level audit requires speech, noise, and SNR inputs")
+    if not 0 < peak_limit < 0.99 or step_db <= 0:
+        raise ValueError("Invalid safe-level audit parameters")
+    worst_unit_peak = 0.0
+    for speech in speeches:
+        speech = np.asarray(speech, dtype=np.float64)
+        speech_unit = speech / active_rms(speech)
+        worst_unit_peak = max(worst_unit_peak, float(np.max(np.abs(speech_unit))))
+        for noise in noise_sources:
+            segment = np.asarray(noise[:len(speech)], dtype=np.float64)
+            if len(segment) != len(speech) or rms(segment) < 1e-8:
+                raise ValueError("Noise source is too short or silent for safe-level audit")
+            noise_unit = segment / rms(segment)
+            for snr_db in snrs_db:
+                mixture_unit = speech_unit + noise_unit / 10 ** (snr_db / 20)
+                worst_unit_peak = max(worst_unit_peak, float(np.max(np.abs(mixture_unit))))
+    ceiling_dbfs = 20 * math.log10(peak_limit / worst_unit_peak)
+    rounded_ceiling = math.floor(ceiling_dbfs / step_db) * step_db
+    chosen = min(float(preferred_dbfs), rounded_ceiling)
+    if chosen < -50:
+        raise ValueError("Selected noise has pathological crest factor; freeze a new panel before scoring")
+    predicted_peak = worst_unit_peak * 10 ** (chosen / 20)
+    return chosen, {"preferred_dbfs": float(preferred_dbfs), "chosen_dbfs": chosen,
+                    "peak_limit": peak_limit, "step_db": step_db,
+                    "worst_unit_peak": worst_unit_peak,
+                    "predicted_max_peak": predicted_peak}
+
+
 def noise_failure_evidence(frame, replicates):
     """Same fact lost in noise but recovered cleanly, for every repeat of a text."""
     base = frame[(frame.split == "dev") & (frame.variant == "baseline")]

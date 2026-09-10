@@ -134,16 +134,24 @@ print("Labels come from the MUSAN folder family; verified_by_listening remains f
 
 
 
-# %% Cell 7 - Resolve models, bind the old synthesis cache, and initialize the resumable run.
+# %% Cell 7 - Audit global headroom, bind the old synthesis cache, and initialize the run.
+from dataforge.experiment import (active_rms, audio_read, audio_read_window,
+                                  phone_roundtrip, safe_speech_level_dbfs)
+
 config = prepare_models(config, WORK / "models")
 source_cache = json.loads((SOURCE_BASELINE / "synthesis_cache.json").read_text())
 source_cache_root = Path(source_cache["path"]).parent
-experiment = Experiment(config, corpus, noises, WORK / "noise_grid_v2/outputs",
-                        synthesis_cache_root=source_cache_root)
 missing_cache = []
+cached_phones = []
 for item in corpus:
     for replicate in range(config["replicates"]):
-        wav, metadata = experiment.synthesis_cache_paths(item, "baseline", replicate)
+        payload = {"text": item["text"], "modelId": config["model_id"],
+                   "speaker": config["speaker"], "lang": config["language"],
+                   "samplingRate": config["sample_rate"], "timeScaleFactor": 1.0}
+        cache_id = digest({"payload": payload, "replicate": replicate,
+                           "endpoint": config["endpoint"]})
+        wav = Path(source_cache["path"]) / f"{cache_id}.wav"
+        metadata = wav.with_suffix(".json")
         if not wav.is_file() or not metadata.is_file():
             missing_cache.append(str(wav))
             continue
@@ -152,12 +160,25 @@ for item in corpus:
             raise ValueError(f"Cached synthesis hash mismatch: {wav}")
         if saved.get("duration_s", MINIMUM_WINDOW_SECONDS + 1) > MINIMUM_WINDOW_SECONDS:
             raise ValueError("A cached utterance exceeds the frozen non-looping noise window")
+        source_audio, source_rate = audio_read(wav)
+        cached_phones.append(phone_roundtrip(source_audio, source_rate))
 if missing_cache:
     raise FileNotFoundError(
         "The 14 required baseline syntheses are not all cached. Restore the audited source cache; "
         "this workflow will not make replacement TTS calls. First missing path: " + missing_cache[0]
     )
 
+noise_windows = [
+    audio_read_window(noise["path"], noise["offset_s"], MINIMUM_WINDOW_SECONDS, 8000)[0]
+    for noise in noises
+]
+preferred_level = config["speech_rms_dbfs"]
+config["speech_rms_dbfs"], headroom_audit = safe_speech_level_dbfs(
+    cached_phones, noise_windows, config["snrs_db"], preferred_level
+)
+experiment = Experiment(config, corpus, noises, WORK / "noise_grid_v2/outputs",
+                        synthesis_cache_root=source_cache_root)
+save_json(experiment.root / "headroom_audit.json", headroom_audit)
 save_json(experiment.root / "noise_panel_selection.json", panel_audit)
 save_json(experiment.root / "catalog_check.json", catalog_check)
 save_json(experiment.root / "evidence_scope.json", {
@@ -176,6 +197,8 @@ save_json(experiment.root / "evidence_scope.json", {
     subprocess.check_output(["ffmpeg", "-version"], text=True)
 )
 print("Run directory:", experiment.root)
+print("Frozen speech level:", config["speech_rms_dbfs"], "dBFS;",
+      "predicted maximum mixture peak:", round(headroom_audit["predicted_max_peak"], 4))
 print("Verified all 14 cached baseline syntheses; the remaining work is evaluator-only.")
 
 

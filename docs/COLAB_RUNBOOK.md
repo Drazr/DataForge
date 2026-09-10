@@ -15,8 +15,9 @@ requires baseline run `6bd1eb398398af0e` and its shared synthesis cache.
    by a seeded rule. Pilot source hashes, short recordings, silent windows,
    clipped windows, and duplicate audio are rejected before scores are viewed.
 5. Cell 7 downloads evaluator models and proves that all 14 source syntheses and
-   metadata files already exist with matching hashes. It stops before any Rime
-   request if the cache is incomplete.
+   metadata files already exist with matching hashes. It audits the exact planned
+   mixtures and freezes one global speech level with 0.90 peak headroom before
+   constructing the run. It stops before any Rime request if the cache is incomplete.
 6. Cell 8 scores a 12-row timed preflight and prints a full-run estimate. Share
    that estimate before committing several CPU hours. Saved rows are reusable by Cell 9.
 7. Cell 9 runs the complete grid. Rerunning it resumes from saved JSON rows.
