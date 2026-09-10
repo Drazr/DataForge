@@ -6,7 +6,7 @@ ASR, DNSMOS inference, audio decoding, model download, or API request.
 
 1. Cell 1 mounts Drive and chooses the completed v2 producer. Set `READY_RUN_ID`
    only if more than one completed run is present.
-2. Cell 2 clones `codex/noise-grid-v2` and records its exact revision.
+2. Cell 2 clones `noise-grid-v2` and records its exact revision.
 3. Cell 3 installs NumPy, pandas, and Matplotlib.
 4. Cell 4 copies the preregistered settings into a new timestamped session before
    displaying results. The chosen 90% critical-fact target is an engineering

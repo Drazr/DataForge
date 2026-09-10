@@ -22,7 +22,7 @@ print("Frozen producer run:", SOURCE_RUN_DIR)
 
 # %% Cell 2 - Clone the same v2 branch into this CPU notebook.
 REPO = Path("/content/DataForge-grid-v2-analysis")
-BRANCH = "codex/noise-grid-v2"
+BRANCH = "noise-grid-v2"
 REPO_URL = "https://github.com/Drazr/DataForge.git"
 if not REPO.exists():
     subprocess.run(["git", "clone", "--single-branch", "--branch", BRANCH, REPO_URL, str(REPO)], check=True)

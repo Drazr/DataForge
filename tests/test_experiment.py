@@ -135,7 +135,7 @@ class AudioTests(unittest.TestCase):
 
     def test_v2_grid_is_precommitted_and_reuses_cached_speech(self):
         source = (ROOT / "colab_noise_masking.py").read_text(encoding="utf-8")
-        self.assertIn('BRANCH = "codex/noise-grid-v2"', source)
+        self.assertIn('BRANCH = "noise-grid-v2"', source)
         self.assertIn('baseline_profile="noise_grid_v2_critical"', source)
         self.assertIn('snrs_db=[15, 10, 5, 0, -5]', source)
         self.assertIn('mixing_protocol="window_rms_no_wrap_v2"', source)

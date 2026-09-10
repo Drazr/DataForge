@@ -13,7 +13,7 @@ print("Persistent workspace:", WORK)
 
 
 # %% Cell 2 - Clone the combined v2 generation/analysis branch.
-BRANCH = "codex/noise-grid-v2"
+BRANCH = "noise-grid-v2"
 REPO_URL = "https://github.com/Drazr/DataForge.git"
 if not REPO.exists():
     subprocess.run(["git", "clone", "--single-branch", "--branch", BRANCH, REPO_URL, str(REPO)], check=True)

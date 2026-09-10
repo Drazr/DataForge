@@ -1,6 +1,6 @@
 # Noise Grid v2 and Breakpoint Analysis
 
-Branch: `codex/noise-grid-v2`.
+Branch: `noise-grid-v2`.
 
 This branch measures where the existing Coda baseline begins to lose critical
 facts as noise increases. It replaces the earlier two-point masking pilot with a
