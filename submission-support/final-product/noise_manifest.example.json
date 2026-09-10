@@ -1,0 +1,20 @@
+[
+  {
+    "id": "competing_speech",
+    "path": "/content/drive/MyDrive/DataForge/data/musan/speech/CHOOSE_A_FILE.wav",
+    "offset_s": 0,
+    "kind": "competing_speech",
+    "source": "https://www.openslr.org/17/",
+    "license": "CC BY 4.0",
+    "verified_by_listening": false
+  },
+  {
+    "id": "environment",
+    "path": "/content/drive/MyDrive/DataForge/data/musan/noise/CHOOSE_TRAFFIC_OR_MACHINERY.wav",
+    "offset_s": 0,
+    "kind": "traffic_or_machinery",
+    "source": "https://www.openslr.org/17/",
+    "license": "CC BY 4.0",
+    "verified_by_listening": false
+  }
+]

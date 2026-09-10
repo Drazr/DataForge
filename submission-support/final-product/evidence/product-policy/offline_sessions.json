@@ -1,0 +1,686 @@
+{
+  "scope": "Offline software verification with scripted text and simulated playback completion",
+  "live_transport": false,
+  "received_audio": null,
+  "detector_installed": false,
+  "performance_claim": null,
+  "sessions": [
+    {
+      "name": "correct_readback",
+      "snapshot": {
+        "status": "confirmed",
+        "confirmed": true,
+        "turn": 4,
+        "current_text": "",
+        "failure": null,
+        "appointment": {
+          "title": "Community studio visit",
+          "date": "18 September 2026",
+          "time": "9:20 AM",
+          "timezone": "India Standard Time",
+          "location": "Riverside Community Studio",
+          "reference": "DF 4821"
+        },
+        "pending_fact": null,
+        "verified_facts": [
+          "reference",
+          "time"
+        ],
+        "fact_check_required": true,
+        "speech_risk": {
+          "state": "addressed_by_readback",
+          "source": "demo_injected",
+          "detector_installed": false,
+          "reported_at": 10.0
+        }
+      },
+      "events": [
+        {
+          "schema": 1,
+          "seq": 0,
+          "at": 10.0,
+          "event": "created",
+          "turn": 0
+        },
+        {
+          "schema": 1,
+          "seq": 1,
+          "at": 10.0,
+          "event": "started",
+          "turn": 0
+        },
+        {
+          "schema": 1,
+          "seq": 2,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "welcome"
+        },
+        {
+          "schema": 1,
+          "seq": 3,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "welcome"
+        },
+        {
+          "schema": 1,
+          "seq": 4,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "time"
+        },
+        {
+          "schema": 1,
+          "seq": 5,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "time"
+        },
+        {
+          "schema": 1,
+          "seq": 6,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "location"
+        },
+        {
+          "schema": 1,
+          "seq": 7,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "location"
+        },
+        {
+          "schema": 1,
+          "seq": 8,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 9,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 10,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "question"
+        },
+        {
+          "schema": 1,
+          "seq": 11,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "question"
+        },
+        {
+          "schema": 1,
+          "seq": 12,
+          "at": 10.0,
+          "event": "speech_risk_reported",
+          "turn": 1,
+          "state": "suspected",
+          "source": "demo_injected",
+          "detector_installed": false,
+          "reported_at": 10.0
+        },
+        {
+          "schema": 1,
+          "seq": 13,
+          "at": 10.0,
+          "event": "fact_checks_reset",
+          "turn": 1,
+          "reason": "reported_speech_risk"
+        },
+        {
+          "schema": 1,
+          "seq": 14,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "speech_risk"
+        },
+        {
+          "schema": 1,
+          "seq": 15,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "speech_risk"
+        },
+        {
+          "schema": 1,
+          "seq": 16,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "time"
+        },
+        {
+          "schema": 1,
+          "seq": 17,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "time"
+        },
+        {
+          "schema": 1,
+          "seq": 18,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "location"
+        },
+        {
+          "schema": 1,
+          "seq": 19,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "location"
+        },
+        {
+          "schema": 1,
+          "seq": 20,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 21,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 22,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "readback_reference"
+        },
+        {
+          "schema": 1,
+          "seq": 23,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "readback_reference"
+        },
+        {
+          "schema": 1,
+          "seq": 24,
+          "at": 10.0,
+          "event": "intent",
+          "turn": 1,
+          "intent": "unclear",
+          "detail": null,
+          "eligible": true
+        },
+        {
+          "schema": 1,
+          "seq": 25,
+          "at": 10.0,
+          "event": "fact_readback",
+          "turn": 2,
+          "fact": "reference",
+          "matched": true,
+          "source": "recognized_reply",
+          "raw_transcript_retained": false
+        },
+        {
+          "schema": 1,
+          "seq": 26,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 2,
+          "segment": "readback_time"
+        },
+        {
+          "schema": 1,
+          "seq": 27,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 2,
+          "segment": "readback_time"
+        },
+        {
+          "schema": 1,
+          "seq": 28,
+          "at": 10.0,
+          "event": "intent",
+          "turn": 2,
+          "intent": "unclear",
+          "detail": null,
+          "eligible": true
+        },
+        {
+          "schema": 1,
+          "seq": 29,
+          "at": 10.0,
+          "event": "fact_readback",
+          "turn": 3,
+          "fact": "time",
+          "matched": true,
+          "source": "recognized_reply",
+          "raw_transcript_retained": false
+        },
+        {
+          "schema": 1,
+          "seq": 30,
+          "at": 10.0,
+          "event": "speech_risk_addressed",
+          "turn": 3,
+          "method": "critical_fact_readback"
+        },
+        {
+          "schema": 1,
+          "seq": 31,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 3,
+          "segment": "question"
+        },
+        {
+          "schema": 1,
+          "seq": 32,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 3,
+          "segment": "question"
+        },
+        {
+          "schema": 1,
+          "seq": 33,
+          "at": 10.0,
+          "event": "intent",
+          "turn": 3,
+          "intent": "confirm",
+          "detail": null,
+          "eligible": true
+        },
+        {
+          "schema": 1,
+          "seq": 34,
+          "at": 10.0,
+          "event": "confirmed",
+          "turn": 4
+        },
+        {
+          "schema": 1,
+          "seq": 35,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 4,
+          "segment": "acknowledgment"
+        },
+        {
+          "schema": 1,
+          "seq": 36,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 4,
+          "segment": "acknowledgment"
+        }
+      ]
+    },
+    {
+      "name": "incorrect_readback",
+      "snapshot": {
+        "status": "ended",
+        "confirmed": false,
+        "turn": 3,
+        "current_text": "",
+        "failure": null,
+        "appointment": {
+          "title": "Community studio visit",
+          "date": "18 September 2026",
+          "time": "9:20 AM",
+          "timezone": "India Standard Time",
+          "location": "Riverside Community Studio",
+          "reference": "DF 4821"
+        },
+        "pending_fact": null,
+        "verified_facts": [],
+        "fact_check_required": true,
+        "speech_risk": {
+          "state": "suspected",
+          "source": "demo_injected",
+          "detector_installed": false,
+          "reported_at": 10.0
+        }
+      },
+      "events": [
+        {
+          "schema": 1,
+          "seq": 0,
+          "at": 10.0,
+          "event": "created",
+          "turn": 0
+        },
+        {
+          "schema": 1,
+          "seq": 1,
+          "at": 10.0,
+          "event": "started",
+          "turn": 0
+        },
+        {
+          "schema": 1,
+          "seq": 2,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "welcome"
+        },
+        {
+          "schema": 1,
+          "seq": 3,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "welcome"
+        },
+        {
+          "schema": 1,
+          "seq": 4,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "time"
+        },
+        {
+          "schema": 1,
+          "seq": 5,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "time"
+        },
+        {
+          "schema": 1,
+          "seq": 6,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "location"
+        },
+        {
+          "schema": 1,
+          "seq": 7,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "location"
+        },
+        {
+          "schema": 1,
+          "seq": 8,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 9,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 10,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 0,
+          "segment": "question"
+        },
+        {
+          "schema": 1,
+          "seq": 11,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 0,
+          "segment": "question"
+        },
+        {
+          "schema": 1,
+          "seq": 12,
+          "at": 10.0,
+          "event": "speech_risk_reported",
+          "turn": 1,
+          "state": "suspected",
+          "source": "demo_injected",
+          "detector_installed": false,
+          "reported_at": 10.0
+        },
+        {
+          "schema": 1,
+          "seq": 13,
+          "at": 10.0,
+          "event": "fact_checks_reset",
+          "turn": 1,
+          "reason": "reported_speech_risk"
+        },
+        {
+          "schema": 1,
+          "seq": 14,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "speech_risk"
+        },
+        {
+          "schema": 1,
+          "seq": 15,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "speech_risk"
+        },
+        {
+          "schema": 1,
+          "seq": 16,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "time"
+        },
+        {
+          "schema": 1,
+          "seq": 17,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "time"
+        },
+        {
+          "schema": 1,
+          "seq": 18,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "location"
+        },
+        {
+          "schema": 1,
+          "seq": 19,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "location"
+        },
+        {
+          "schema": 1,
+          "seq": 20,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 21,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 22,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 1,
+          "segment": "readback_reference"
+        },
+        {
+          "schema": 1,
+          "seq": 23,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 1,
+          "segment": "readback_reference"
+        },
+        {
+          "schema": 1,
+          "seq": 24,
+          "at": 10.0,
+          "event": "intent",
+          "turn": 1,
+          "intent": "unclear",
+          "detail": null,
+          "eligible": true
+        },
+        {
+          "schema": 1,
+          "seq": 25,
+          "at": 10.0,
+          "event": "fact_readback",
+          "turn": 2,
+          "fact": "reference",
+          "matched": false,
+          "source": "recognized_reply",
+          "raw_transcript_retained": false
+        },
+        {
+          "schema": 1,
+          "seq": 26,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 2,
+          "segment": "fact_mismatch"
+        },
+        {
+          "schema": 1,
+          "seq": 27,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 2,
+          "segment": "fact_mismatch"
+        },
+        {
+          "schema": 1,
+          "seq": 28,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 2,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 29,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 2,
+          "segment": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 30,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 2,
+          "segment": "readback_reference"
+        },
+        {
+          "schema": 1,
+          "seq": 31,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 2,
+          "segment": "readback_reference"
+        },
+        {
+          "schema": 1,
+          "seq": 32,
+          "at": 10.0,
+          "event": "intent",
+          "turn": 2,
+          "intent": "confirm",
+          "detail": null,
+          "eligible": true
+        },
+        {
+          "schema": 1,
+          "seq": 33,
+          "at": 10.0,
+          "event": "fact_readback",
+          "turn": 3,
+          "fact": "reference",
+          "matched": false,
+          "source": "recognized_reply",
+          "raw_transcript_retained": false
+        },
+        {
+          "schema": 1,
+          "seq": 34,
+          "at": 10.0,
+          "event": "ended",
+          "turn": 3,
+          "reason": "fact_not_verified",
+          "fact": "reference"
+        },
+        {
+          "schema": 1,
+          "seq": 35,
+          "at": 10.0,
+          "event": "segment_started",
+          "turn": 3,
+          "segment": "ended"
+        },
+        {
+          "schema": 1,
+          "seq": 36,
+          "at": 10.0,
+          "event": "playback_complete",
+          "turn": 3,
+          "segment": "ended"
+        }
+      ]
+    }
+  ]
+}

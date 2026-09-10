@@ -1,0 +1,83 @@
+{
+  "run_id": "05eca3e90a16aae62993a4e8c0622498daf075b34cb0dd9342baad1fa1a946ce",
+  "input_file": "baseline_results.csv",
+  "split": "dev",
+  "variant": "baseline",
+  "expected_rows": 294,
+  "selected_rows": 294,
+  "missing_rows": 0,
+  "scope_source": "evidence_scope.json",
+  "warnings": [],
+  "created_utc": "2026-09-10T09:58:33.747554+00:00",
+  "settings": {
+    "input_file": "baseline_results.csv",
+    "split": "dev",
+    "variant": "baseline",
+    "acceptance": {
+      "maximum_wer": null,
+      "minimum_fact_recovery": 0.9,
+      "rationale": "Exploratory engineering target chosen before v2 scores; not a human-comprehension or safety threshold.",
+      "established_before_review": true
+    },
+    "repeatability": {
+      "minimum_texts": 4,
+      "minimum_text_fraction": 0.5714285714285714,
+      "minimum_repeats": 2,
+      "minimum_deterioration": {
+        "wer": 0.0,
+        "fact_recovery": 0.05,
+        "estoi": 0.0
+      }
+    },
+    "bootstrap_samples": 2000,
+    "seed": 20260910,
+    "audio_path_remap": {}
+  },
+  "grid_source": "baseline_condition_summary.csv",
+  "source_hashes": {
+    "baseline_results.csv": "8eadb1952fcb5e7eff466efdae60e5b6f1c408b39c0eb8911989f58999099ca2",
+    "manifest.json": "9de913f6296efde16c9c9895328743efdaac6725223e2aebce836ea5cf9f16d2",
+    "evidence_scope.json": "d8b21851ee8da6a73789d38091035360feae63c3d0a0ead592613f50a6f9b83d",
+    "baseline_fact_failures.csv": "a12a9630b224d4375d0ffb87494f74f02bd0ee08242dffedfcffde734fadd245",
+    "noise_failure_evidence.csv": "af30b3bd3b4fe2f67727798e390fa0310ab14e2d27cc152b63bc6685309f5d65",
+    "baseline_condition_summary.csv": "6df26a952be057656b368c116a2bfd766b26561a34fccbad95bcd8986545cddc"
+  },
+  "analysis_code_sha256": "582d55374bb768c6c1bd2f4a73a094be4ddc7b6f57609afabfd161ce0fd160ae",
+  "evidence_scope": {
+    "texts_by_split": {
+      "dev": 7,
+      "heldout": 0
+    },
+    "critical_texts_by_split": {
+      "dev": 7,
+      "heldout": 0
+    },
+    "noise_sources": 4,
+    "synthesis_repeats": 2,
+    "snrs_db": [
+      15,
+      10,
+      5,
+      0,
+      -5
+    ],
+    "planned_scores": 294,
+    "source_baseline_run_id": "6bd1eb398398af0edcbe31d260e15fa71a6e5aca1c3d9abc117aef7028d71966",
+    "evidence_level": "exploratory critical-fact ASR proxy; not human comprehension"
+  },
+  "versions": {
+    "python": "3.13.15",
+    "numpy": "2.5.3",
+    "pandas": "2.2.3"
+  },
+  "supported_metric_intervals": 0,
+  "challenge_rows": 82,
+  "limitations": [
+    "Pilot evidence; no universal threshold or classifier",
+    "WER and fact recovery are ASR proxies, not measured human comprehension",
+    "SNR intervals use nominal calibration; inspect measured SNR differences",
+    "Bootstrap resamples texts, not repeats; small-sample intervals are exploratory",
+    "No multiplicity correction; recurrence settings are pilot choices, not statistical guarantees",
+    "DNSMOS is supporting quality evidence and does not define a breakpoint"
+  ]
+}

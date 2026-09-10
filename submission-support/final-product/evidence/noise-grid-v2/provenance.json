@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "scope": "competing-speech masking and critical-fact evidence only",
+  "producer_run_id": "05eca3e90a16aae62993a4e8c0622498daf075b34cb0dd9342baad1fa1a946ce",
+  "producer_rows": 294,
+  "producer_complete": true,
+  "heldout_accessed": false,
+  "mixing_protocol": "window_rms_no_wrap_v2",
+  "analysis_session": "20260910T095801572979Z",
+  "original_results_path": "/content/drive/MyDrive/DataForge/grid_analysis_v2/outputs/05eca3e90a16aae6/20260910T095801572979Z/results",
+  "source_code": {
+    "branch": "noise-grid-v2",
+    "commit": "698fb0e"
+  },
+  "copied_into": {
+    "branch": "final-product",
+    "product_base_branch": "product-foundation",
+    "product_base_commit": "826a5df"
+  },
+  "supplied_artifacts": [
+    {
+      "path": "cell6_output.txt",
+      "sha256": "8e6362dbbdefd567d45fdd94f36fd46487806814a15193a4e0e23e898de5cf0f",
+      "type": "verbatim pasted Colab output"
+    },
+    {
+      "path": "cell7_output.txt",
+      "sha256": "8a129830cc9930a64c168fc3d7e529e6c75a3435a62e3479becd5b5c0eef47a0",
+      "type": "verbatim pasted Colab output"
+    }
+  ],
+  "full_exports_supplied": true,
+  "missing_from_package": [
+    "Original producer manifest.json (hash supplied)",
+    "Full producer audio set and synthesis cache (only three selected WAVs supplied)"
+  ],
+  "limitations": [
+    "Full analysis CSVs and confidence fields are supplied; original pastes remain unchanged.",
+    "Selected WAV hashes match saved observations; scores have not been recomputed.",
+    "No live product performance or human-comprehension result is inferred."
+  ],
+  "imported_artifacts": [
+    {
+      "path": "imported/audio/critical_01_baseline_r0_clean.wav",
+      "sha256": "934c2239a64ab41c8daee027c85c4032693e8c22265c10953d439779fbe90790"
+    },
+    {
+      "path": "imported/audio/critical_01_baseline_r0_speech_2_-5dB.wav",
+      "sha256": "a6d720f762b020efb0fec6bbd14f9528e102b7c69ebc55c582b2da82721daec5"
+    },
+    {
+      "path": "imported/audio/critical_01_baseline_r0_speech_2_5dB.wav",
+      "sha256": "ded0d0b26251b393d2c1779f474e20fcaa974853b93e5979057833650a380427"
+    },
+    {
+      "path": "imported/results/adjacent_estoi.png",
+      "sha256": "6dc67c2db1454925e97998d0c1ce661b2be94de2b1be0127f7db4e8774263e90"
+    },
+    {
+      "path": "imported/results/adjacent_fact_recovery.png",
+      "sha256": "713cc64db0114bba301dde2f92d9b3aadf9a85b5bcdca7dfe362770196d922db"
+    },
+    {
+      "path": "imported/results/adjacent_pairs.csv",
+      "sha256": "eb8499e67d214cd920521094b523938c6ec58b2e0d86dc8bd4f283a38e8c98bb"
+    },
+    {
+      "path": "imported/results/adjacent_wer.png",
+      "sha256": "6f4b369eebe9f8657a0604372d9ffb885f386c2307b7ee8eed8d91974cda36db"
+    },
+    {
+      "path": "imported/results/analysis_grid.csv",
+      "sha256": "33dd97e4dac4b89d9576f8b45e585dc4d40a76c9558e0e6b114b1f2b9ec7ddfe"
+    },
+    {
+      "path": "imported/results/analysis_record.json",
+      "sha256": "2f308ce68c15c0a5e25ae7aa46144481c3a7ae57b52a19782ba8a6ac23c2598a"
+    },
+    {
+      "path": "imported/results/breakpoint_intervals.csv",
+      "sha256": "e99bcb58e867e176b4d493c4dae70665404a6b26050abbffc350b093ccebc609"
+    },
+    {
+      "path": "imported/results/development_challenge_cases.csv",
+      "sha256": "c614c92a5289a1cf3672ec2e726119853a8f46ecfd2edf3752ec258113826790"
+    },
+    {
+      "path": "imported/results/missing_observations.csv",
+      "sha256": "d19ffc09ffc4d2d7299e5af7e4c0629807868c543a6e1a7c952fb052090d21db"
+    },
+    {
+      "path": "imported/results/REPORT.md",
+      "sha256": "120fd7eb1d28c20f8e63bff3244759f9c8b5619f981d99a625aab7ffd7170753"
+    },
+    {
+      "path": "imported/results/selected_observations.csv",
+      "sha256": "dce2d86c1e718a29fac72423fc5490c8d5cae2f608d8bd439c1d296e7f1fd880"
+    }
+  ]
+}
