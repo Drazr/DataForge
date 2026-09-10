@@ -73,3 +73,16 @@ async def test_close_cancels_pending_playback():
     await r.close()
     assert c.status == 'ended'
     assert p.cancels >= 1
+
+
+async def test_user_reported_difficulty_restarts_with_fact_readback():
+    c, p = Controller(), Playback()
+    p.gate.set()
+    r = Runtime(c, p)
+    r.start()
+    await r.task
+    r.report_difficulty()
+    await r.task
+    assert c.status == 'awaiting_fact' and c.pending_fact == 'reference'
+    assert c.speech_risk['source'] == 'user_reported'
+    await r.close()

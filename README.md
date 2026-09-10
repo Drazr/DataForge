@@ -14,14 +14,16 @@ supported breakpoint crossings; 5 dB is an observed aggregate risk region in two
 speech recordings. No universal threshold, detector accuracy, human-comprehension,
 or mitigation-improvement claim is made.
 
-Start with [engineering methods](docs/ENGINEERING_PLAN.md),
-[focused evidence](RIME_EVIDENCE.md), [submission checklist](docs/SUBMISSION_CHECKLIST.md),
-and [ordered development log](docs/DEVELOPMENT_LOG.md).
+Start with [focused evidence](RIME_EVIDENCE.md). Supporting material is temporarily
+archived on `main`: [engineering methods](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/docs/ENGINEERING_PLAN.md),
+[submission checklist](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/docs/SUBMISSION_CHECKLIST.md),
+and [ordered development log](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/docs/DEVELOPMENT_LOG.md).
 The existing backend/frontend and their dependency locks are all in this branch.
 The original Colab outputs, full machine-readable analysis results, and three
-hash-verified clean/competing-speech clips are archived in this branch.
-[Repository and demo links](DEMO_LINK.md) is the stable handoff to the public
-Google Doc containing the repository and final recording URLs.
+hash-verified clean/competing-speech clips are archived on
+[main](https://github.com/Drazr/DataForge/tree/main/submission-support/final-product/evidence/noise-grid-v2).
+[Repository and demo links](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/DEMO_LINK.md)
+contains a placeholder for your public Google Doc URL; the final video is pending.
 
 ## Run locally
 
@@ -147,9 +149,9 @@ The browser suite mocks only configuration/setup error responses and labels itse
 For unattended real voice verification, install Chromium first, configure credentials, and stop an already-running backend unless it was started with `DATAFORGE_TEST_MODE=1`. Then run from the product root:
 
 ```powershell
-.venv/Scripts/python.exe -m product.cli live
+.venv/Scripts/python.exe -m product.cli live --focus speech-facts
 ```
 
 This generates synthetic Rime caller WAV fixtures, starts/reuses the local services, injects fixture audio into a real browser microphone stream, runs the real VAD/STT/TTS path, and saves reports plus received audio under `evidence/`. It uses billed Rime/LiveKit calls. Missing credentials produce `unverified` and a nonzero exit, never a pass. If reusing services, the backend must have test mode enabled. Failure injection is disabled by default in ordinary use.
 
-See [product evidence and frozen acceptance procedures](docs/PRODUCT_EVIDENCE.md) and [demo script](docs/PRODUCT_DEMO.md). Report final-product measurements separately from offline grid metrics. The saved grid's acceptance criteria remain unchanged.
+See [frozen acceptance procedures](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/docs/PRODUCT_EVIDENCE.md) and [demo script](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/docs/PRODUCT_DEMO.md). Report final-product measurements separately from offline grid metrics. The saved grid's acceptance criteria remain unchanged.

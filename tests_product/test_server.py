@@ -48,3 +48,25 @@ def test_failure_controls_disabled_by_default(monkeypatch):
         assert response.status_code == 403
     finally:
         sessions.clear()
+
+
+def test_user_difficulty_is_available_and_demo_injection_is_test_only(monkeypatch):
+    class Runtime:
+        calls = []
+        def report_difficulty(self, source): self.calls.append(source)
+    class Worker:
+        closed = False
+        controller = Controller()
+        runtime = Runtime()
+    sessions['example'] = {'secret':'secret', 'worker':Worker()}
+    headers={'Authorization':'Bearer secret'}
+    client=TestClient(app)
+    try:
+        monkeypatch.setenv('DATAFORGE_TEST_MODE', '0')
+        assert client.post('/api/sessions/example/action',headers=headers,json={'action':'hearing_difficulty'}).status_code == 200
+        assert client.post('/api/sessions/example/action',headers=headers,json={'action':'competing_speech_demo'}).status_code == 403
+        monkeypatch.setenv('DATAFORGE_TEST_MODE', '1')
+        assert client.post('/api/sessions/example/action',headers=headers,json={'action':'competing_speech_demo'}).status_code == 200
+        assert Worker.runtime.calls == ['user_reported', 'demo_injected']
+    finally:
+        sessions.clear()

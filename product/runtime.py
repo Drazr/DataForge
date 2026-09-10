@@ -80,6 +80,13 @@ class Runtime:
             self.launch(self.controller.recover())
             self.notify()
 
+    def report_difficulty(self, source='user_reported'):
+        if self.closed:
+            raise ValueError('Session ended. Start a new session.')
+        segments = self.controller.report_difficulty(source)
+        self.launch(segments)
+        self.notify()
+
     async def close(self):
         if self.closed:
             return

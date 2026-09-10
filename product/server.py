@@ -71,7 +71,7 @@ class Create(BaseModel):
 
 class Action(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    action: Literal['start', 'end', 'recover', 'connection_lost', 'speech_failure', 'recognition_failure', 'fail_next_synthesis']
+    action: Literal['start', 'end', 'recover', 'connection_lost', 'speech_failure', 'recognition_failure', 'fail_next_synthesis', 'hearing_difficulty', 'competing_speech_demo']
 
 
 @app.get('/api/health')
@@ -126,10 +126,14 @@ async def action(sid: str, body: Action, request: Request):
             await worker.recover()
         elif body.action == 'connection_lost':
             await worker.runtime.failure('connection')
+        elif body.action == 'hearing_difficulty':
+            worker.runtime.report_difficulty('user_reported')
         else:
             if os.getenv('DATAFORGE_TEST_MODE') != '1':
                 raise HTTPException(403, 'Failure injection is disabled.')
-            if body.action == 'fail_next_synthesis':
+            if body.action == 'competing_speech_demo':
+                worker.runtime.report_difficulty('demo_injected')
+            elif body.action == 'fail_next_synthesis':
                 worker.audio.fail_next = True
             else:
                 category = 'speech_provider' if body.action == 'speech_failure' else 'recognition'

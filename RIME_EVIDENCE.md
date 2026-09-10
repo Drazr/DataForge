@@ -51,11 +51,11 @@ Full producer run ID:
 `05eca3e90a16aae62993a4e8c0622498daf075b34cb0dd9342baad1fa1a946ce`.
 Analysis session: `20260910T095801572979Z`.
 
-[Archived outputs and derived summary](evidence/noise-grid-v2/README.md) identify
-the supplied files and missing exports. [Reproduction](docs/GRID_REPRODUCTION.md)
+[Archived outputs and derived summary](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/evidence/noise-grid-v2/README.md) identify
+the supplied files and missing exports. [Reproduction](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/docs/GRID_REPRODUCTION.md)
 includes the CPU analysis command and unchanged source provenance.
-Confidence bounds are hidden by the pasted dataframe display; their numeric
-values cannot be reconstructed from these means and have not been fabricated.
+Confidence fields are now available in the supplied full CSV exports. Original
+pastes and analysis results are preserved unchanged on `main`.
 
 ## Product engineering claim
 
@@ -66,16 +66,30 @@ speech, targeted replay, a fresh-response gate, and this read-back policy.
 Automatic competing-speech detection is not installed; no detector accuracy,
 speaker identity, human comprehension, or mitigation improvement has been measured.
 
-[Product procedure](docs/PRODUCT_EVIDENCE.md) defines the next validation.
+[Product procedure](https://github.com/Drazr/DataForge/blob/main/submission-support/final-product/docs/PRODUCT_EVIDENCE.md) defines the next validation.
 Record normal and stress cases, false confirmations and unresolved cases on the
 actual final transport. The fixed offline mixtures motivate the product but do
 not directly validate live microphone monitoring.
 
 The product defaults are Rime `coda/astra/eng`,
 `https://users.rime.ai/v1/rime-tts`, mono 24 kHz signed 16-bit PCM through
-LiveKit WebRTC/Opus. Verify these through live preflight. The original experiment's
-exact voice/model/transport must be recovered from its manifest; do not substitute
-these product defaults for missing experimental provenance.
+LiveKit WebRTC/Opus. Verify these through live preflight. The supplied experiment
+rows record Coda/Celeste, HTTP WAV through a local PCMU roundtrip, and noise added
+after the simulated phone codec. The study and product use different transport/voice settings.
+
+## Repeatable product acceptance and current result
+
+Run `python -m product.cli test`: 81 product tests passed locally, including wrong,
+partial and contradictory fact replies, fresh-response gating, and API controls.
+TypeScript and the production frontend build passed. Seven browser setup checks
+reported passing; the runner was interrupted during server teardown.
+
+With local credentials configured, run `python -m product.cli live --focus speech-facts`.
+Acceptance requires: normal confirmation exactly once; reported difficulty requires
+both correct reference and time before confirmation; two wrong code replies end
+unconfirmed. The suite saves received audio and redacted event records under
+`evidence/`. Risk injection is disclosed and does not test automatic detection.
+This credentialed run is pending; software checks are not measured voice performance.
 
 ## Limitations
 
@@ -83,7 +97,7 @@ ASR fact recovery and WER are proxies, not measured human comprehension.
 Clean fact recovery was 94.90%, not perfect. Seven texts and two recordings per
 noise family do not establish generalization. Product read-back checks cannot
 authenticate speakers by themselves. Full analysis exports and three selected,
-hash-verified source-audio clips are included. A credentialed final-product run
+hash-verified source-audio clips are preserved in the linked `main` archive. A credentialed final-product run
 has not yet been added.
 
 The submission evidence concerns competing speech and critical facts only.

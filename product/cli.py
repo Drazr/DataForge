@@ -38,7 +38,9 @@ async def fixtures():
     directory.mkdir(parents=True,exist_ok=True)
     config=SpeechConfig.from_env()
     await validate_catalog(config)
-    phrases={'yes':'Yes, I confirm.', 'repeat':'Repeat the time.', 'no':'No thank you.', 'stop':'Stop.'}
+    phrases={'yes':'Yes, I confirm.', 'repeat':'Repeat the time.', 'no':'No thank you.', 'stop':'Stop.',
+             'reference':'D F four eight two one.', 'time':'Nine twenty A M.',
+             'wrong_reference':'D F four eight two two.'}
     hashes={}
     async with aiohttp.ClientSession() as http:
         audio=RimeAudio(config,AudioCache(ROOT/'.product-cache'/'caller-fixtures'),http)
@@ -61,9 +63,10 @@ def main():
     parser.add_argument('--session')
     parser.add_argument('--capability', help='Prefer DATAFORGE_SESSION_CAPABILITY environment variable.')
     parser.add_argument('--output',default=str(ROOT/'evidence'/'session.json'))
+    parser.add_argument('--focus', choices=['all', 'speech-facts'], default='all')
     args=parser.parse_args()
     if args.command=='test':
-        raise SystemExit(subprocess.call([sys.executable,'-m','pytest','-q'],cwd=ROOT))
+        raise SystemExit(subprocess.call([sys.executable,'-m','pytest','tests_product','-q'],cwd=ROOT))
     if args.command=='export':
         import os
         import httpx
@@ -106,7 +109,10 @@ def main():
         save_status()
         from shutil import which
         pnpm=which('pnpm') or str(Path(sys.base_prefix).parent/'bin'/'fallback'/'pnpm.cmd')
-        result=subprocess.call([pnpm,'exec','playwright','test','--config','playwright.live.config.ts'],cwd=ROOT/'web')
+        command=[pnpm,'exec','playwright','test','--config','playwright.live.config.ts']
+        if args.focus == 'speech-facts':
+            command += ['--grep', 'normal confirmation|reported hearing difficulty|wrong critical']
+        result=subprocess.call(command,cwd=ROOT/'web')
         status['status']='passed' if result==0 else 'failed'
     except KeyboardInterrupt:
         result=130

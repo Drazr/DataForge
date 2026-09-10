@@ -148,7 +148,9 @@ class VoiceWorker:
         except (OSError, subprocess.TimeoutExpired):
             commit = 'unavailable'
         endpoint = urlsplit(os.environ.get('LIVEKIT_URL', ''))
-        return {'schema': 1, 'session_id': self.id, 'snapshot': self.controller.snapshot(),
+        return {'schema': 2, 'session_id': self.id, 'snapshot': self.controller.snapshot(),
+                'confirmation_policy': 'readback-reference-time-v1',
+                'speech_risk_detection': 'not installed; user reports or disclosed test injection only',
                 'git_commit': commit,
                 'dependencies': {name: version(name) for name in ('livekit-agents','livekit-plugins-rime','livekit-plugins-silero','livekit')},
                 'livekit_endpoint': f'{endpoint.scheme}://{endpoint.hostname or ""}',
@@ -157,6 +159,8 @@ class VoiceWorker:
                 'transport': 'LiveKit WebRTC/Opus', 'stt': 'deepgram/nova-3',
                 'events': list(self.controller.events),
                 'limitations': ['Sender-side playout completion is not proof of human comprehension.',
+                                'Recognized fact read-back is not speaker authentication.',
+                                'No automatic competing-speech detection or measured mitigation benefit.',
                                 'Browser transport is not a telephone codec experiment.',
                                 'Synthetic appointment only; no real booking is updated.']}
 

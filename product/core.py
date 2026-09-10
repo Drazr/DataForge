@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import re
+import math
 import time
 from dataclasses import asdict, dataclass
 from typing import Literal, Protocol
+from .facts import matches_fact
 
-IntentName = Literal['confirm', 'reject', 'repeat', 'stop', 'unclear']
+IntentName = Literal['confirm', 'reject', 'repeat', 'stop', 'unclear', 'difficulty']
 DETAILS = ('time', 'location', 'reference')
+CHECKED_FACTS = ('reference', 'time')
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,9 @@ class GuidedInterpreter:
             return Intent('reject')
         if text in {'stop', 'end the session', 'goodbye', 'cancel', 'stop talking'}:
             return Intent('stop')
+        if text in {'i hear another voice', 'there is another voice', 'too noisy',
+                    'i cant hear you', 'i cannot hear you', 'someone else is speaking'}:
+            return Intent('difficulty')
         if text in {'repeat', 'repeat that', 'say that again', 'repeat the last detail',
                     'i didnt hear that', 'pardon'}:
             return Intent('repeat', context.last_detail)
@@ -95,6 +101,11 @@ class DeliveryPlanner:
     def question(self) -> Segment:
         return Segment('question', 'Can you confirm this appointment? Say yes, no, or ask me to repeat a detail.')
 
+    def readback(self, fact: str) -> Segment:
+        requests = {'reference': 'Please say the full reference code, including its letters.',
+                    'time': 'Please say the appointment time, including A M or P M.'}
+        return Segment('readback_' + fact, requests[fact])
+
 
 class Controller:
     """Only this controller can acknowledge an appointment.
@@ -118,6 +129,12 @@ class Controller:
         self.events: list[dict] = []
         self.seen_inputs: set[str] = set()
         self.failure: str | None = None
+        self.verified_facts: set[str] = set()
+        self.fact_check_required = False
+        self.pending_fact: str | None = None
+        self.fact_attempts = 0
+        self.speech_risk = {'state': 'not_assessed', 'source': 'detector_unavailable',
+                            'detector_installed': False}
         self.emit('created')
 
     def emit(self, event: str, **fields):
@@ -132,7 +149,17 @@ class Controller:
         return {'status': self.status, 'confirmed': self.confirmed,
                 'turn': self.generation,
                 'current_text': self.current.text if self.current else '',
-                'failure': self.failure, 'appointment': asdict(self.appointment)}
+                'failure': self.failure, 'appointment': asdict(self.appointment),
+                'pending_fact': self.pending_fact,
+                'verified_facts': sorted(self.verified_facts),
+                'fact_check_required': self.fact_check_required,
+                'speech_risk': dict(self.speech_risk)}
+
+    def next_question(self):
+        if not self.fact_check_required:
+            return self.planner.question()
+        missing = next((fact for fact in CHECKED_FACTS if fact not in self.verified_facts), None)
+        return self.planner.readback(missing) if missing else self.planner.question()
 
     def details(self):
         return [self.planner.detail(d) for d in DETAILS]
@@ -142,7 +169,7 @@ class Controller:
             return []
         self.status = 'active'
         self.emit('started')
-        return [Segment('welcome', 'Let us confirm your practice appointment. Please wait for the question before replying.')] + self.details() + [self.planner.question()]
+        return [Segment('welcome', 'Let us confirm your practice appointment. Please wait for the question before replying.')] + self.details() + [self.next_question()]
 
     def begin(self, segment: Segment, generation: int) -> bool:
         if generation != self.generation or self.status == 'recovery':
@@ -161,6 +188,11 @@ class Controller:
         if segment.id == 'question':
             self.ready_at = self.clock()
             self.status = 'awaiting_confirmation'
+            self.pending_fact = None
+        elif segment.id in {'readback_reference', 'readback_time'}:
+            self.ready_at = self.clock()
+            self.pending_fact = segment.id.removeprefix('readback_')
+            self.status = 'awaiting_fact'
         self.emit('playback_complete', segment=segment.id)
         return True
 
@@ -168,11 +200,12 @@ class Controller:
         self.current = None
         self.generation += 1
         self.ready_at = None
+        self.pending_fact = None
         if not self.terminal and self.status != 'recovery':
             self.status = 'active'
 
     def receive(self, transcript: str, input_id: str, started_at: float):
-        if self.terminal or self.status != 'awaiting_confirmation' or self.current or input_id in self.seen_inputs:
+        if self.terminal or self.status not in {'awaiting_confirmation', 'awaiting_fact'} or self.current or input_id in self.seen_inputs:
             return []
         self.seen_inputs.add(input_id)
         context = Context(self.status, self.last_detail, self.ready_at is not None)
@@ -180,39 +213,86 @@ class Controller:
             intent = self.interpreter.interpret(transcript, context)
         except Exception:
             intent = None
-        if (not isinstance(intent, Intent) or intent.name not in {'confirm', 'reject', 'repeat', 'stop', 'unclear'}
+        if (not isinstance(intent, Intent) or intent.name not in {'confirm', 'reject', 'repeat', 'stop', 'unclear', 'difficulty'}
                 or (intent.name == 'repeat' and intent.detail not in DETAILS)
                 or (intent.name != 'repeat' and intent.detail is not None)):
             intent = Intent('unclear')
             self.emit('invalid_interpreter_output')
-        eligible = self.ready_at is not None and started_at >= self.ready_at
+        eligible = (self.ready_at is not None and isinstance(started_at, (int, float))
+                    and not isinstance(started_at, bool) and math.isfinite(started_at)
+                    and started_at >= self.ready_at)
+        pending_fact = self.pending_fact
         self.emit('intent', intent=intent.name, detail=intent.detail, eligible=eligible)
+        if intent.name == 'difficulty':
+            return self.report_difficulty('user_reported')
         self.reset_playback()
         if intent.name in {'reject', 'stop'}:
             self.status = 'ended'
             self.emit('ended', reason=intent.name)
             return [Segment('ended', 'The session has ended. Your appointment has not been confirmed.')]
-        if intent.name == 'confirm' and eligible:
+        if not eligible:
+            self.emit('input_rejected', reason='not_fresh')
+            return [self.next_question()]
+        if intent.name == 'repeat':
+            self.unanswered = 0
+            repeat = self.planner.detail(intent.detail)
+            if intent.detail in CHECKED_FACTS:
+                self.verified_facts.discard(intent.detail)
+                self.fact_attempts = 0
+            return [repeat, self.next_question()]
+        if pending_fact:
+            matched = matches_fact(pending_fact, transcript, self.appointment)
+            self.emit('fact_readback', fact=pending_fact, matched=matched,
+                      source='recognized_reply', raw_transcript_retained=False)
+            if matched:
+                self.verified_facts.add(pending_fact)
+                self.fact_attempts = 0
+                if set(CHECKED_FACTS) <= self.verified_facts:
+                    self.speech_risk = {**self.speech_risk, 'state': 'addressed_by_readback'}
+                    self.emit('speech_risk_addressed', method='critical_fact_readback')
+                return [self.next_question()]
+            self.fact_attempts += 1
+            if self.fact_attempts >= 2:
+                self.status = 'ended'
+                self.emit('ended', reason='fact_not_verified', fact=pending_fact)
+                return [Segment('ended', 'I could not verify that detail. Your appointment remains unconfirmed. Please check the details on screen.')]
+            return [Segment('fact_mismatch', 'That did not match the detail. Please listen and say it back after the question.'),
+                    self.planner.detail(pending_fact), self.next_question()]
+        if intent.name == 'confirm' and (not self.fact_check_required or
+                                         set(CHECKED_FACTS) <= self.verified_facts):
             self.confirmed = True
             self.status = 'confirmed'
             self.emit('confirmed')
             return [Segment('acknowledgment', 'Thank you. Your practice appointment is confirmed. No real booking has been changed.')]
-        if intent.name == 'repeat':
-            self.unanswered = 0
-            repeat = self.planner.detail(intent.detail)
-            return [repeat, self.planner.question()]
         self.unanswered += 1
         if self.unanswered >= 2:
             self.status = 'ended'
             self.emit('ended', reason='unanswered')
             return [Segment('ended', 'I could not get a clear confirmation. Your appointment remains unconfirmed. Goodbye.')]
-        return [Segment('clarify', 'Please say yes to confirm, no, or ask me to repeat the time or code.'), self.planner.question()]
+        return [Segment('clarify', 'Please say yes to confirm, no, or ask me to repeat the time or code.'), self.next_question()]
+
+    def report_difficulty(self, source='user_reported'):
+        if source not in {'user_reported', 'demo_injected'}:
+            raise ValueError('Unsupported speech-risk source.')
+        if self.terminal or self.status in {'ready', 'recovery'}:
+            raise ValueError('Start or recover the voice session before reporting difficulty.')
+        self.reset_playback()
+        self.verified_facts.clear()
+        self.fact_check_required = True
+        self.fact_attempts = 0
+        self.speech_risk = {'state': 'suspected', 'source': source,
+                            'detector_installed': False, 'reported_at': self.clock()}
+        self.emit('speech_risk_reported', **self.speech_risk)
+        self.emit('fact_checks_reset', reason='reported_speech_risk')
+        return [Segment('speech_risk', 'You reported difficulty hearing. Please move somewhere quieter if you can. Let us check the code and time again.')] + self.details() + [self.next_question()]
 
     def fail(self, category: str):
         if self.terminal:
             self.emit('post_outcome_failure', category=category)
             return
         self.reset_playback()
+        self.verified_facts.clear()
+        self.fact_attempts = 0
         self.status = 'recovery'
         self.failure = category
         self.emit('failure', category=category)
@@ -223,7 +303,7 @@ class Controller:
         self.failure = None
         self.status = 'active'
         self.emit('recovered')
-        return self.details() + [self.planner.question()]
+        return self.details() + [self.next_question()]
 
     def end(self):
         self.reset_playback()

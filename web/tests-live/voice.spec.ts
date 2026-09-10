@@ -118,6 +118,48 @@ test('repeat after the question replays the requested fact without confirming',a
   }finally{await action(page,s,'end');}
 });
 
+test('reported hearing difficulty requires critical-fact readback before confirmation',async({page})=>{
+  const s=await begin(page);
+  try{
+    await expect.poll(async()=>(await state(page,s)).status,{timeout:100_000}).toBe('awaiting_confirmation');
+    await action(page,s,'hearing_difficulty');
+    await expect.poll(async()=>(await state(page,s)).pending_fact,{timeout:100_000}).toBe('reference');
+    await say(page,'reference');
+    await expect.poll(async()=>(await state(page,s)).pending_fact,{timeout:60_000}).toBe('time');
+    await say(page,'time');
+    await expect.poll(async()=>(await state(page,s)).status,{timeout:60_000}).toBe('awaiting_confirmation');
+    await say(page,'yes');
+    await expect.poll(async()=>(await state(page,s)).confirmed,{timeout:30_000}).toBe(true);
+    await expect.poll(async()=>(await evidence(page,s)).events.some((e:any)=>e.event==='playback_complete'&&e.segment==='acknowledgment'),{timeout:30_000}).toBe(true);
+    const {report}=await save(page,s,'reported-speech-risk-readback');
+    expect(report.speech_risk_detection).toContain('not installed');
+    expect(report.events.filter((e:any)=>e.event==='fact_readback'&&e.matched).map((e:any)=>e.fact)).toEqual(['reference','time']);
+    expect(report.events.some((e:any)=>e.event==='speech_risk_reported'&&e.source==='user_reported')).toBe(true);
+  }finally{await action(page,s,'end');}
+});
+
+test('wrong critical readback ends unconfirmed after disclosed risk injection',async({page})=>{
+  const s=await begin(page);
+  try{
+    await expect.poll(async()=>(await state(page,s)).status,{timeout:100_000}).toBe('awaiting_confirmation');
+    await action(page,s,'competing_speech_demo');
+    await expect.poll(async()=>(await state(page,s)).pending_fact,{timeout:100_000}).toBe('reference');
+    const turn=(await state(page,s)).turn;
+    await say(page,'wrong_reference');
+    await expect.poll(async()=>{
+      const current=await state(page,s);
+      return current.turn>turn&&current.pending_fact==='reference';
+    },{timeout:60_000}).toBe(true);
+    await say(page,'wrong_reference');
+    await expect.poll(async()=>(await state(page,s)).status,{timeout:30_000}).toBe('ended');
+    await expect.poll(async()=>(await evidence(page,s)).events.some((e:any)=>e.event==='playback_complete'&&e.segment==='ended'),{timeout:30_000}).toBe(true);
+    const {report}=await save(page,s,'disclosed-risk-wrong-readback');
+    expect(report.snapshot.confirmed).toBe(false);
+    expect(report.events.filter((e:any)=>e.event==='fact_readback'&&!e.matched)).toHaveLength(2);
+    expect(report.events.some((e:any)=>e.event==='speech_risk_reported'&&e.source==='demo_injected')).toBe(true);
+  }finally{await action(page,s,'end');}
+});
+
 test('provider failure is disclosed and recovery asks for a fresh confirmation',async({page})=>{
   const s=await begin(page);
   try{

@@ -20,6 +20,5 @@ models/
 node_modules/
 .product-cache/
 evidence/*
-!evidence/noise-grid-v2/
-!evidence/noise-grid-v2/**
+*.log
 test-results/
