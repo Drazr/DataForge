@@ -1,136 +1,118 @@
-# %% Cell 1 - Mount Drive and locate the completed baseline exports.
-# Copy each marked section into its own cell. Exactly three blank lines separate cells.
-# Reuse the Noise Masking or Noise-Conditioned Delivery A/B run folder directly.
-# colab_noise_ab.py Cell 9 exports everything needed; no A/B winner is required.
+# %% Cell 1 - Mount Drive and select the completed v2 measurement run.
 from pathlib import Path
 import subprocess
 import sys
 from google.colab import drive
 
 drive.mount("/content/drive")
-REPO = Path("/content/DataForge-grid")
-RUN_DIR = Path("/content/drive/MyDrive/DataForge/outputs/REPLACE_WITH_RUN_ID")
-if not RUN_DIR.is_dir():
-    raise ValueError("Set RUN_DIR to the Noise Masking or Noise-Conditioned A/B folder containing the baseline exports")
-print("Evidence folder:", RUN_DIR)
-print("Use a separate analysis notebook; the completed baseline is sufficient.")
+WORK = Path("/content/drive/MyDrive/DataForge")
+READY_RUN_ID = ""  # Leave blank when Drive contains exactly one completed v2 run.
+root = WORK / "noise_grid_v2/outputs"
+candidates = sorted(path.parent for path in root.glob("*/ready_for_grid.json"))
+if READY_RUN_ID:
+    SOURCE_RUN_DIR = root / READY_RUN_ID
+elif len(candidates) == 1:
+    SOURCE_RUN_DIR = candidates[0]
+else:
+    print("Completed candidates:", *candidates, sep="\n")
+    raise ValueError("Set READY_RUN_ID to one completed v2 run")
+print("Frozen producer run:", SOURCE_RUN_DIR)
 
 
 
-# %% Cell 2 - Load the analysis branch (or use an uploaded source archive).
-# The branch must be committed and pushed before cloning it from GitHub.
-BRANCH = "codex/grid-breakpoint-analysis"
+# %% Cell 2 - Clone the same v2 branch into this CPU notebook.
+REPO = Path("/content/DataForge-grid-v2-analysis")
+BRANCH = "codex/noise-grid-v2"
 REPO_URL = "https://github.com/Drazr/DataForge.git"
 if not REPO.exists():
     subprocess.run(["git", "clone", "--single-branch", "--branch", BRANCH, REPO_URL, str(REPO)], check=True)
-if (REPO / ".git").is_dir():
+if (REPO / ".git").exists():
     active = subprocess.check_output(["git", "-C", str(REPO), "branch", "--show-current"], text=True).strip()
     if active != BRANCH:
         raise ValueError(f"Expected {BRANCH}, found {active}; use a separate checkout")
     REVISION = subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "HEAD"], text=True).strip()
-    print("Commit:", REVISION, "(existing checkouts are not automatically updated)")
+    print("Branch:", active, "Commit:", REVISION)
 else:
-    REVISION = "uploaded source archive; retain original commit separately"
+    REVISION = "uploaded source archive; retain its source commit separately"
 if not (REPO / "dataforge/grid_analysis.py").is_file():
-    raise ValueError("Missing analysis files; clone the analysis branch or extract its source archive into REPO")
+    raise ValueError("Missing v2 grid-analysis code")
 sys.path.insert(0, str(REPO))
 
 
 
-# %% Cell 3 - Install lightweight analysis dependencies on a CPU runtime.
-if sys.version_info[:2] not in {(3, 11), (3, 12)}:
-    raise RuntimeError("The dependency pins target Python 3.11/3.12; choose a compatible runtime")
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(REPO / "requirements-grid.txt")], check=True)
-print("If Colab requests a restart, restart and rerun Cells 1-2, then continue at Cell 4.")
+# %% Cell 3 - Install lightweight CPU-only analysis dependencies.
+if sys.version_info[:2] not in {(3, 11), (3, 12), (3, 13)}:
+    raise RuntimeError("Use Python 3.11, 3.12 or 3.13")
+requirements = (REPO / "requirements-grid.txt").read_text()
+if sys.version_info[:2] == (3, 13):
+    requirements = requirements.replace("numpy==1.26.4", "numpy>=2.2,<3")
+    requirements = requirements.replace("pandas==2.2.3", "pandas>=2.2.3,<3")
+    requirements = requirements.replace("matplotlib==3.9.4", "matplotlib>=3.10,<4")
+runtime_requirements = REPO / "requirements-grid-runtime.txt"
+runtime_requirements.write_text(requirements + "\n")
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--prefer-binary",
+                "-r", str(runtime_requirements)], check=True)
+print("Analysis dependencies installed. CPU is sufficient; no GPU runtime is needed.")
 
 
 
-# %% Cell 4 - Freeze analysis settings BEFORE reviewing the grid.
+# %% Cell 4 - Freeze the preregistered analysis settings before viewing results.
 import copy
 import json
 from datetime import datetime, timezone
-from IPython.display import Audio, Image, display
 from dataforge.grid_analysis import load_evidence, load_performance_grid, run_analysis, validate_settings, write_json
 
+ready = json.loads((SOURCE_RUN_DIR / "ready_for_grid.json").read_text())
+if not ready.get("complete") or ready.get("rows") != 294 or ready.get("heldout_accessed") is not False:
+    raise ValueError("Producer handoff is incomplete or outside the v2 development scope")
 SETTINGS = json.loads((REPO / "grid_analysis.json").read_text())
-SETTINGS["input_file"] = "baseline_results.csv"  # Preferred; available immediately after the A/B baseline finishes.
-# Later, choose results.csv and ONE split/variant below per analysis session.
-# Never concatenate it with baseline_results.csv or dev_baseline.csv.
-SETTINGS["split"] = "dev"  # heldout is reporting only; no challenge selection.
-SETTINGS["variant"] = "baseline"
-SETTINGS["acceptance"] = {
-    "maximum_wer": None,              # User-selected absolute limit; fractional WER, e.g. 0.1 = 10%.
-    "minimum_fact_recovery": None,    # User-selected absolute limit in [0, 1].
-    "rationale": "",                  # Required when either limit is set.
-    "established_before_review": False,
-}
-# With both limits None, analysis proceeds and reports deterioration only.
-# Recurrence defaults: >=2 texts, >=50% eligible texts, every configured repeat,
-# at least 2 repeats, positive mean deterioration, and a complete planned interval.
-# Change these pilot choices BEFORE reviewing evidence; zero delta is a direction
-# test, not a minimum practically important effect. See GRID_ANALYSIS_RUNBOOK.md.
-# Optional old-to-new audio-root mappings after moving the run directory:
-# SETTINGS["audio_path_remap"] = {"/old/DataForge/outputs": "/content/drive/MyDrive/DataForge/outputs"}
 validate_settings(SETTINGS)
 FROZEN_SETTINGS = copy.deepcopy(SETTINGS)
-ANALYSIS_ROOT = RUN_DIR / "grid_analysis"
-SESSION = ANALYSIS_ROOT / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+SESSION = (WORK / "grid_analysis_v2/outputs" / SOURCE_RUN_DIR.name /
+           datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ"))
 SESSION.mkdir(parents=True, exist_ok=False)
 write_json(SESSION / "settings_before_review.json", FROZEN_SETTINGS)
 (SESSION / "git-revision.txt").write_text(REVISION)
-print("Saved settings:", SESSION)
+print("Frozen settings and output session:", SESSION)
 
 
 
-# %% Cell 5 - Verify the producer files and review the EXISTING performance grid.
-rows, manifest, scope, missing, checks = load_evidence(RUN_DIR, FROZEN_SETTINGS)
-print("Rows:", checks["selected_rows"], "Expected:", checks["expected_rows"])
-print("Scope:", checks["scope_source"])
-display(missing)
-grid_preview, grid_source = load_performance_grid(RUN_DIR, rows, FROZEN_SETTINGS, checks["warnings"])
+# %% Cell 5 - Verify the complete producer contract before analysis.
+from IPython.display import display
+
+rows, manifest, scope, missing, checks = load_evidence(SOURCE_RUN_DIR, FROZEN_SETTINGS)
+if checks["selected_rows"] != 294 or checks["missing_rows"] != 0:
+    raise ValueError("Expected the complete 294-row critical-text grid")
+if manifest["config"].get("mixing_protocol") != "window_rms_no_wrap_v2":
+    raise ValueError("This notebook accepts only the v2 non-looping window calibration")
+grid_preview, grid_source = load_performance_grid(
+    SOURCE_RUN_DIR, rows, FROZEN_SETTINGS, checks["warnings"]
+)
 display(grid_preview)
-print("Performance grid:", grid_source)
-if grid_source == "baseline_condition_summary.csv":
-    # Only these three existing metric plots are used. DNSMOS is excluded.
-    for metric in ("wer", "fact_recovery", "estoi"):
-        plot = RUN_DIR / f"baseline_{metric}.png"
-        if plot.is_file():
-            display(Image(filename=str(plot)))
-    print("Reusing the producer grid and available plots. Paired calculations use the verified per-clip rows.")
-else:
-    print("Using the selected-row grid; baseline plots are not shown without a matching baseline summary.")
-for warning in checks["warnings"]:
-    print(warning)
+print("Verified rows:", checks["selected_rows"], "Performance grid:", grid_source)
+print("DNSMOS is retained as supporting quality evidence; fact recovery defines crossings.")
 
 
 
-# %% Cell 6 - Compute paired changes, uncertainty, and configured limit crossings.
+# %% Cell 6 - Compute paired adjacent-SNR intervals and text-clustered uncertainty.
 if SETTINGS != FROZEN_SETTINGS:
-    raise ValueError("Settings changed after freezing; record a new analysis session in Cell 4")
+    raise ValueError("Settings changed after freezing; start a new session at Cell 4")
 OUTPUT = SESSION / "results"
-analysis = run_analysis(RUN_DIR, FROZEN_SETTINGS, OUTPUT)
+analysis = run_analysis(SOURCE_RUN_DIR, FROZEN_SETTINGS, OUTPUT)
 display(analysis["grid"])
 display(analysis["intervals"])
+print((OUTPUT / "REPORT.md").read_text())
+
+
+
+# %% Cell 7 - Display the final CPU-only result and preserve its Drive path.
+from IPython.display import Image
+
 for metric in ("wer", "fact_recovery", "estoi"):
     display(Image(filename=str(OUTPUT / f"adjacent_{metric}.png")))
-print((OUTPUT / "REPORT.md").read_text())
-# Outputs are immutable per session. To rerun, start a new session at Cell 4.
-
-
-
-# %% Cell 7 - Review linked development challenge candidates and retain exports.
-cases = analysis["challenges"]
-display(cases)
-# Optional listening only: no new synthesis, scoring, or intervention selection.
-PLAY_FIRST_PAIR = False
-if PLAY_FIRST_PAIR and not cases.empty:
-    selected = cases.iloc[0]
-    for label, column in (("Clean", "resolved_clean_audio_path"), ("Noisy", "resolved_audio_path")):
-        print(label, selected.text_id, selected.condition, selected.fact_id)
-        if Path(selected[column]).is_file():
-            display(Audio(filename=selected[column]))
-        else:
-            print("Audio missing:", selected[column], "-- configure audio_path_remap in Cell 4")
-print("Persistent outputs:", OUTPUT)
-print("Hand development_challenge_cases.csv to the separate delivery A/B workflow for review.")
-print("No A/B challenge, candidate, or acceptance limit was selected automatically.")
+supported = analysis["intervals"][analysis["intervals"].supported_breakpoint]
+repeatable = analysis["intervals"][analysis["intervals"].repeatable_deterioration]
+display(supported)
+display(repeatable)
+print("Persistent analysis:", OUTPUT)
+print("Share REPORT.md, analysis_record.json and breakpoint_intervals.csv before planning any refinement or intervention.")

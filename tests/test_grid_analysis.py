@@ -86,18 +86,36 @@ class GridAnalysisTests(unittest.TestCase):
         intervals, pairs = interval_analysis(frame, manifest, self.settings)
         return intervals, pairs, missing
 
+    def use_v2_contract(self):
+        self.manifest["config"]["mixing_protocol"] = "window_rms_no_wrap_v2"
+        run_id = hashlib.sha256(json.dumps(self.manifest, sort_keys=True).encode()).hexdigest()
+        self.frame["run_id"] = run_id
+        self.frame["mixing_protocol"] = "window_rms_no_wrap_v2"
+        noisy = self.frame.condition != "clean"
+        self.frame.loc[noisy, "measured_snr_db"] = self.frame.loc[noisy, "snr_db"]
+        self.frame["noise_window_rms"] = np.where(noisy, 0.1, np.nan)
+        self.frame["noise_gain"] = np.where(noisy, 0.2, np.nan)
+        self.frame["noise_looped"] = False
+        self.frame["source_audio_sha256"] = self.frame.source_audio.map(
+            lambda value: hashlib.sha256(value.encode()).hexdigest()
+        )
+        write_json(self.path / "manifest.json", self.manifest)
+        self.save_frame()
+
     def limits(self):
         self.settings["acceptance"] = dict(maximum_wer=0.2, minimum_fact_recovery=0.9,
                                           rationale="Synthetic test limits", established_before_review=True)
+        self.settings["repeatability"].update(minimum_texts=2, minimum_text_fraction=0.5)
 
-    def test_end_to_end_export_and_dns_exclusion(self):
+    def test_end_to_end_export_retains_dnsmos_as_supporting_metric(self):
         result = run_analysis(self.path, self.settings, self.path / "analysis")
         self.assertEqual(len(result["intervals"]), 12)
         self.assertTrue(result["intervals"].repeatable_deterioration.any())
         self.assertFalse(result["intervals"].supported_breakpoint.any())
         self.assertFalse(result["challenges"].empty)
         selected = pd.read_csv(self.path / "analysis/selected_observations.csv")
-        self.assertFalse(any(c.startswith("dnsmos") for c in selected))
+        self.assertIn("dnsmos_ovrl", selected)
+        self.assertNotIn("dnsmos_ovrl", set(result["intervals"].metric))
         self.assertEqual(len(list((self.path / "analysis").glob("adjacent_*.png"))), 3)
         self.assertEqual(result["report"]["missing_rows"], 0)
         self.assertTrue(selected.loc[selected.fact_count == 0, "fact_recovery"].isna().all())
@@ -171,11 +189,11 @@ class GridAnalysisTests(unittest.TestCase):
         summary.to_csv(self.path / "baseline_condition_summary.csv", index=False)
         return summary
 
-    def test_existing_summary_is_reused_and_recorded_without_dnsmos(self):
+    def test_existing_summary_is_reused_and_retains_dnsmos(self):
         self.producer_summary()
         result = run_analysis(self.path, self.settings, self.path / "reused-grid")
         self.assertEqual(result["report"]["grid_source"], "baseline_condition_summary.csv")
-        self.assertNotIn("dnsmos_ovrl", result["grid"])
+        self.assertIn("dnsmos_ovrl", result["grid"])
         self.assertIn("measured_snr_db_min", result["grid"])
         self.assertIn("baseline_condition_summary.csv", result["report"]["source_hashes"])
 
@@ -201,7 +219,7 @@ class GridAnalysisTests(unittest.TestCase):
     def test_missing_baseline_explains_export_stage(self):
         self.frame.to_csv(self.path / "results.csv", index=False)
         (self.path / "baseline_results.csv").unlink()
-        with self.assertRaisesRegex(FileNotFoundError, "Cell 9"):
+        with self.assertRaisesRegex(FileNotFoundError, "Cell 10"):
             load_evidence(self.path, self.settings)
 
     def test_noise_source_and_speech_control_mismatch_rejected(self):
@@ -213,6 +231,25 @@ class GridAnalysisTests(unittest.TestCase):
         self.frame.loc[0, "source_audio"] = "/different.wav"
         self.save_frame()
         with self.assertRaisesRegex(ValueError, "Speech source"):
+            self.analyze()
+
+    def test_v2_contract_rejects_looping_snr_drift_and_changed_windows(self):
+        self.use_v2_contract()
+        self.analyze()
+        noisy_index = self.frame.index[self.frame.condition != "clean"][0]
+        self.frame.loc[noisy_index, "noise_looped"] = True
+        self.save_frame()
+        with self.assertRaisesRegex(ValueError, "never loop"):
+            self.analyze()
+        self.frame.loc[noisy_index, "noise_looped"] = False
+        self.frame.loc[noisy_index, "measured_snr_db"] += 0.5
+        self.save_frame()
+        with self.assertRaisesRegex(ValueError, "differs"):
+            self.analyze()
+        self.frame.loc[noisy_index, "measured_snr_db"] -= 0.5
+        self.frame.loc[noisy_index, "noise_window_rms"] = 0.2
+        self.save_frame()
+        with self.assertRaisesRegex(ValueError, "window changed"):
             self.analyze()
 
     def test_partial_results_selection_does_not_pool_variants(self):
@@ -294,6 +331,8 @@ class GridAnalysisTests(unittest.TestCase):
 
     def test_limits_require_rationale_and_prior_choice(self):
         self.settings["acceptance"]["maximum_wer"] = 0.2
+        self.settings["acceptance"]["rationale"] = ""
+        self.settings["acceptance"]["established_before_review"] = False
         with self.assertRaisesRegex(ValueError, "rationale"):
             validate_settings(self.settings)
 

@@ -66,6 +66,14 @@ class AudioTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             noise_window(source, 10, 7)
 
+    def test_v2_noise_window_never_wraps(self):
+        source = np.arange(10)
+        window, looped = noise_window(source, 4, 3, wrap=False)
+        np.testing.assert_array_equal(window, [3, 4, 5, 6])
+        self.assertFalse(looped)
+        with self.assertRaisesRegex(ValueError, "too short"):
+            noise_window(source, 8, 3, wrap=False)
+
     def test_actual_ffmpeg_pcmu_roundtrip(self):
         try:
             import imageio_ffmpeg
@@ -107,12 +115,18 @@ class AudioTests(unittest.TestCase):
                 cell = "# %%" + cell
             compile(cell, "colab_cell", "exec")
 
-    def test_stress_profile_is_precommitted_and_preserves_required_repeats(self):
+    def test_v2_grid_is_precommitted_and_reuses_cached_speech(self):
         source = (ROOT / "colab_noise_masking.py").read_text(encoding="utf-8")
-        self.assertIn('BASELINE_PROFILE = "stress_0_to_minus5"', source)
-        self.assertIn('"stress_0_to_minus5": [0, -5]', source)
-        self.assertIn('GPU_REQUIRED = True', source)
-        self.assertIn('config["replicates"] * conditions', source)
+        self.assertIn('BRANCH = "codex/noise-grid-v2"', source)
+        self.assertIn('baseline_profile="noise_grid_v2_critical"', source)
+        self.assertIn('snrs_db=[15, 10, 5, 0, -5]', source)
+        self.assertIn('mixing_protocol="window_rms_no_wrap_v2"', source)
+        self.assertIn('if planned_scores != 294:', source)
+        self.assertIn('if len(corpus) != 7 or any(item not in source_manifest["corpus"] for item in corpus):', source)
+        self.assertIn('synthesis_cache_root=source_cache_root', source)
+        self.assertIn('if missing_cache:', source)
+        self.assertIn('["nvidia-smi", "-L"]', source)
+        self.assertIn('if not baseline.synthesis_cached.all():', source)
         self.assertIn('"dnsmos_enabled": true', (ROOT / "experiment.json").read_text())
 
     def test_failed_http_is_not_retried(self):

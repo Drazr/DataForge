@@ -18,13 +18,14 @@ import pandas as pd
 
 
 METRICS = ("wer", "fact_recovery", "estoi")
+GRID_METRICS = (*METRICS, "dnsmos_ovrl")
 KEYS = ["text_id", "replicate", "condition"]
 REQUIRED = [
     "run_id", "split", "variant", "clip_id", *KEYS, "noise_id", "snr_db",
     "measured_snr_db", "noise_file", "noise_sha256", "noise_offset_s",
     "noise_kind", "noise_reference_rms", "sample_rate", "speech_level_method",
     "model_id", "speaker", "endpoint", "transport", "noise_placement",
-    "source_audio", "duration_s", "fact_count", "audio_path", *METRICS,
+        "source_audio", "duration_s", "fact_count", "audio_path", *GRID_METRICS,
 ]
 INTERVAL_COLUMNS = [
     "noise_id", "noise_kind", "higher_snr_db", "lower_snr_db",
@@ -110,8 +111,8 @@ def load_evidence(directory, settings):
     run_id = hashlib.sha256(json.dumps(manifest, sort_keys=True).encode()).hexdigest()
     if not (directory / settings["input_file"]).is_file():
         raise FileNotFoundError(
-            f"Missing {settings['input_file']}. Use baseline_results.csv after colab_noise_ab.py "
-            "Cell 9 finishes; results.csv is optional and exported later in Cell 15."
+            f"Missing {settings['input_file']}. Run colab_noise_masking.py through Cell 10 "
+            "to complete and export the v2 producer grid."
         )
     raw = pd.read_csv(directory / settings["input_file"])
     missing_columns = sorted(set(REQUIRED) - set(raw.columns))
@@ -120,20 +121,20 @@ def load_evidence(directory, settings):
     if set(raw.run_id.dropna()) != {run_id} or raw.run_id.isna().any():
         raise ValueError("CSV run_id does not match manifest.json; use files from one original run")
     frame = raw[(raw.split == settings["split"]) & (raw.variant == settings["variant"])].copy()
-    # DNSMOS never enters downstream analysis or exported selected observations.
-    frame = frame.drop(columns=[c for c in frame if c.startswith("dnsmos")])
     if frame.empty:
         raise ValueError("No rows match the requested split and variant")
     if frame.duplicated(KEYS).any() or frame.clip_id.duplicated().any():
         raise ValueError("Duplicate observations; do not concatenate overlapping baseline exports")
     if frame[["clip_id", *KEYS, "noise_id", "audio_path"]].isna().any().any():
         raise ValueError("Missing observation identifiers or audio paths")
-    for column in ["replicate", "snr_db", "measured_snr_db", "fact_count", *METRICS]:
+    for column in ["replicate", "snr_db", "measured_snr_db", "fact_count", *GRID_METRICS]:
         frame[column] = pd.to_numeric(frame[column], errors="raise")
         if np.isinf(frame[column]).any():
             raise ValueError(f"Infinite value in {column}")
     if frame.wer.isna().any() or (frame.wer < 0).any():
         raise ValueError("WER must be nonnegative and present (values above 1 are valid)")
+    if frame.dnsmos_ovrl.isna().any() or not np.isfinite(frame.dnsmos_ovrl).all():
+        raise ValueError("DNSMOS OVRL must be finite and present as supporting evidence")
     facts = frame.fact_count > 0
     if frame.loc[facts, "fact_recovery"].isna().any() or not frame.loc[facts, "fact_recovery"].between(0, 1).all():
         raise ValueError("Critical clips require fact_recovery between 0 and 1")
@@ -188,10 +189,41 @@ def load_evidence(directory, settings):
         noise_id, snr = conditions[row.condition]
         if row.noise_id != noise_id or (snr is not None and row.snr_db != snr):
             raise ValueError("Condition label disagrees with noise/SNR metadata")
+    if config.get("mixing_protocol") == "window_rms_no_wrap_v2":
+        v2_required = {"mixing_protocol", "noise_window_rms", "noise_gain", "noise_looped",
+                       "source_audio_sha256"}
+        absent = sorted(v2_required - set(frame.columns))
+        if absent:
+            raise ValueError(f"V2 rows are missing mixing fields: {absent}")
+        if not frame.mixing_protocol.eq("window_rms_no_wrap_v2").all():
+            raise ValueError("V2 mixing protocol changed within the run")
+        if not frame.source_audio_sha256.astype(str).str.fullmatch(r"[0-9a-f]{64}").all():
+            raise ValueError("Invalid v2 source-audio hash")
+        for column in ("noise_window_rms", "noise_gain"):
+            values = pd.to_numeric(frame.loc[noisy, column], errors="raise")
+            if values.isna().any() or not np.isfinite(values).all() or (values <= 0).any():
+                raise ValueError(f"Invalid v2 {column}")
+        looped = frame.loc[noisy, "noise_looped"]
+        if looped.dtype != bool:
+            normalized = looped.astype(str).str.lower().map({"true": True, "false": False})
+            if normalized.isna().any():
+                raise ValueError("Invalid v2 noise_looped value")
+            looped = normalized
+        if looped.any():
+            raise ValueError("V2 noise windows must never loop")
+        if (frame.loc[noisy, "measured_snr_db"] - frame.loc[noisy, "snr_db"]).abs().max() > 0.1:
+            raise ValueError("V2 measured SNR differs from its request by more than 0.1 dB")
     # One speech realization must be reused across SNRs, including its clean reference.
-    controls = frame.groupby(["text_id", "replicate"])[["source_audio", "duration_s"]].nunique(dropna=False)
+    control_columns = ["source_audio", "duration_s"]
+    if config.get("mixing_protocol") == "window_rms_no_wrap_v2":
+        control_columns.append("source_audio_sha256")
+    controls = frame.groupby(["text_id", "replicate"])[control_columns].nunique(dropna=False)
     if (controls != 1).any().any():
         raise ValueError("Speech source/duration changes across matched conditions")
+    if config.get("mixing_protocol") == "window_rms_no_wrap_v2":
+        windows = frame[noisy].groupby(["text_id", "replicate", "noise_id"])["noise_window_rms"].nunique()
+        if (windows != 1).any():
+            raise ValueError("V2 noise window changed across SNRs")
     expected_keys = set(itertools.product(expected_texts, range(repeats), conditions))
     actual_keys = set(frame[KEYS].itertuples(index=False, name=None))
     if actual_keys - expected_keys:
@@ -214,7 +246,7 @@ def summarize_grid(frame):
         record = {"condition": condition, "noise_id": rows.noise_id.iloc[0],
                   "snr_db": rows.snr_db.iloc[0], "clips": len(rows), "texts": rows.text_id.nunique(),
                   "critical_clips": int(rows.fact_recovery.notna().sum())}
-        for metric in METRICS:
+        for metric in GRID_METRICS:
             record[metric] = rows.groupby("text_id")[metric].mean().mean()
         for stat in ("mean", "min", "max"):
             record[f"measured_snr_db_{stat}"] = getattr(rows.measured_snr_db, stat)()
@@ -232,7 +264,7 @@ It does not regenerate speech, metric scores, or existing baseline plots.
     path = Path(directory) / "baseline_condition_summary.csv"
     if settings["split"] != "dev" or settings["variant"] != "baseline" or not path.is_file():
         return derived, "derived from selected observations"
-    columns = ["condition", "noise_id", "snr_db", "clips", "texts", "critical_clips", *METRICS]
+    columns = ["condition", "noise_id", "snr_db", "clips", "texts", "critical_clips", *GRID_METRICS]
     try:
         saved = pd.read_csv(path)
         if not set(columns).issubset(saved) or saved.condition.duplicated().any():
@@ -241,7 +273,7 @@ It does not regenerate speech, metric scores, or existing baseline plots.
         expected = derived.set_index("condition").sort_index()
         if not saved.index.equals(expected.index) or not saved.noise_id.equals(expected.noise_id):
             raise ValueError("condition/noise coverage differs")
-        for column in ["snr_db", "clips", "texts", "critical_clips", *METRICS]:
+        for column in ["snr_db", "clips", "texts", "critical_clips", *GRID_METRICS]:
             if not np.allclose(saved[column], expected[column], rtol=1e-9, atol=1e-12, equal_nan=True):
                 raise ValueError(f"{column} differs from selected observations")
         # Preserve producer metric values, adding only the measured-SNR diagnostics.
@@ -281,12 +313,14 @@ def interval_analysis(frame, manifest, settings):
                 grouped = valid.groupby("text_id")
                 deltas = grouped[f"{metric}_deterioration"].mean()
                 n = len(deltas)
-                consistent = int((grouped[f"{metric}_deterioration"].min() > rules["minimum_deterioration"][metric]).sum())
+                threshold = rules["minimum_deterioration"][metric]
+                minima = grouped[f"{metric}_deterioration"].min()
+                consistent = int(((minima >= threshold) if threshold > 0 else (minima > 0)).sum())
                 enough = complete and repeats >= rules["minimum_repeats"] and n == eligible and n >= rules["minimum_texts"]
                 mean_delta = float(deltas.mean())
                 repeatable = (enough and consistent >= rules["minimum_texts"] and
                               consistent / max(eligible, 1) >= rules["minimum_text_fraction"] and
-                              mean_delta > rules["minimum_deterioration"][metric])
+                              (mean_delta >= threshold if threshold > 0 else mean_delta > 0))
                 ci = [float("nan"), float("nan")]
                 if n >= 2:
                     # Resample texts, retaining all their repeats together (no pseudo-replication).
@@ -443,7 +477,7 @@ def run_analysis(directory, settings, output):
                         "SNR intervals use nominal calibration; inspect measured SNR differences",
                         "Bootstrap resamples texts, not repeats; small-sample intervals are exploratory",
                         "No multiplicity correction; recurrence settings are pilot choices, not statistical guarantees",
-                        "No DNSMOS analysis or quality-based intervention decision"],
+                        "DNSMOS is supporting quality evidence and does not define a breakpoint"],
     })
     write_json(output / "analysis_record.json", report)
     a = settings["acceptance"]

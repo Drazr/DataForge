@@ -1,5 +1,3 @@
-import ast
-import re
 import unittest
 from pathlib import Path
 
@@ -32,14 +30,9 @@ class TimeScoringTests(unittest.TestCase):
         facts = [{"id": "time", "aliases": ["9:20 am"], "forbidden": ["9:28 am"]}]
         self.assertEqual(fact_score("9.20am or 928 a.m.", facts)[0], 0)
 
-    def test_standalone_review_uses_identical_time_normalization(self):
+    def test_v2_notebook_uses_the_shared_experiment_scorer(self):
         source = Path(__file__).resolve().parents[1] / "colab_noise_masking.py"
-        if not source.exists():
-            self.skipTest("Standalone review belongs to the Noise-Masking branch")
-        tree = ast.parse(source.read_text())
-        helper = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
-                      and node.name == "canonicalize_time")
-        namespace = {"re": re}
-        exec(compile(ast.Module(body=[helper], type_ignores=[]), "cell10", "exec"), namespace)
-        for text in ("9.20am", "920 a.m.", "9.28am", "11.60am", "1-25pm", "1920am"):
-            self.assertEqual(namespace["canonicalize_time"](text), canonicalize_time(text))
+        notebook = source.read_text()
+        self.assertIn("from dataforge.experiment import Experiment", notebook)
+        self.assertNotIn("def canonicalize_time", notebook)
+        self.assertIs(canonicalize_time, fact_score.__globals__["canonicalize_time"])

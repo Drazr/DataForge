@@ -50,7 +50,7 @@ Next: run only Cell 10 to persist the review in Drive. A further A/B study needs
 a separately planned development baseline; keep the original run and held-out
 split unchanged, and do not reduce the recurrence gate to force eligibility.
 
-## Next baseline decision
+## Next baseline decision (historical; superseded by v2 below)
 
 Grid/Breakpoint Analysis is deferred in favor of retaining Noise-Conditioned A/B
 if a stronger baseline validates a challenge. Cell 4 now commits the separate
@@ -72,3 +72,19 @@ The A/B branch now contains the copied review evidence and prefilled handoff
 settings. Its Cell 4 copies the complete original run and source synthesis cache
 from shared Drive. The review ZIP alone omits that cache and some audio. Human
 listening is still pending; no A/B or held-out outcome has been claimed.
+
+## Noise Grid v2 development log
+
+Added 2026-09-10. These entries continue the sequence above and record design
+decisions before any v2 score is available.
+
+| Step | Problem | Countermeasure and short reason | Status |
+| --- | --- | --- | --- |
+| 11 | The two-point 0/-5 dB stress run located a failure condition but could not locate onset or separate recording-specific effects. | Freeze five adjacent SNR levels and four distinct MUSAN recordings. This supplies actual intervals and two sources per noise family. | Implemented; no v2 measurements yet. |
+| 12 | A full 42-text grid would consume scarce Colab GPU time while only seven texts carry labeled critical facts. | Use seven critical development texts × two cached syntheses × 21 conditions = 294 scores. This targets the primary factual-fidelity question and leaves held-out untouched. | Implemented as the core run. |
+| 13 | New synthesis would add Rime cost and another uncontrolled speech realization. | Bind the source baseline's synthesis cache and verify all 14 WAV/metadata hashes before scoring. Refuse any cache miss. | Implemented in Cell 7. |
+| 14 | Full-source RMS plus wrapping can misstate SNR for changing speech/noise and repeat a short segment. | Read a bounded source window, calibrate its actual RMS for each utterance, forbid wrapping, retain gain and nominal/measured SNR, and enforce 0.1 dB agreement. | Implemented and contract-tested. |
+| 15 | Choosing favorable noise clips after seeing results would bias the grid; manual listening is slow. | Seed selection before scoring; choose two speech and two environmental files, exclude pilot hashes, and reject short, silent, clipped, or duplicate recordings. Save the audit. | Implemented in `noise_grid_v2.py`. |
+| 16 | A long run can lose a Colab GPU session. | Save one JSON row per clip, reuse verified rows on rerun, and estimate runtime from a 12-score preflight. | Implemented in Cells 8–9. |
+| 17 | Qwen listening review used a large quantized model, exhausted GPU allocations, and produced unstable JSON without a calibrated human-quality claim. | Remove it from the breakpoint gate. Use objective ASR fact recovery as primary, ESTOI/WER as diagnostics, and existing DNSMOS as supporting quality evidence. | Implemented; Qwen is not downloaded. |
+| 18 | Analysis itself could waste a GPU session. | Split generation and analysis notebooks. The second notebook reads saved metrics and runs on CPU only. | Implemented. |

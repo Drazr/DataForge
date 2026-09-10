@@ -100,6 +100,24 @@ def audio_read(path, rate=None):
     return audio, sr
 
 
+def audio_read_window(path, offset_s, duration_s, rate=8000):
+    """Read one bounded source window without loading a long recording into RAM."""
+    with sf.SoundFile(path) as source:
+        start = round(offset_s * source.samplerate)
+        frames = round(duration_s * source.samplerate)
+        if start < 0 or start + frames > len(source):
+            raise ValueError("Requested audio window is outside the source clip")
+        source.seek(start)
+        audio = source.read(frames, dtype="float32", always_2d=True).mean(axis=1)
+        sr = source.samplerate
+    if not len(audio) or not np.isfinite(audio).all():
+        raise ValueError(f"Empty or invalid audio window: {path}")
+    if rate != sr:
+        divisor = math.gcd(sr, rate)
+        audio = resample_poly(audio, rate // divisor, sr // divisor).astype(np.float32)
+    return audio, rate
+
+
 def rms(audio):
     return float(np.sqrt(np.mean(np.asarray(audio, dtype=np.float64) ** 2)))
 
@@ -156,10 +174,14 @@ def phone_roundtrip(audio, sample_rate):
     return np.frombuffer(decoded, dtype="<f4").copy()
 
 
-def noise_window(audio, length, offset):
+def noise_window(audio, length, offset, *, wrap=True):
     if offset < 0 or offset >= len(audio):
         raise ValueError("Noise offset is outside the source clip")
-    # Same offset and deterministic wrap for both variants; record looping.
+    if not wrap and offset + length > len(audio):
+        raise ValueError("Noise source is too short for the frozen non-looping window")
+    if not wrap:
+        return np.asarray(audio[offset:offset + length], dtype=np.float32), False
+    # Pilot compatibility: same offset and deterministic wrap across variants.
     indices = (np.arange(length) + offset) % len(audio)
     return audio[indices], offset + length > len(audio)
 
@@ -255,28 +277,43 @@ def request_audio(key, payload, endpoint, accept="audio/wav", chunk_size=512):
 
 
 class Experiment:
-    def __init__(self, config, corpus, noises, output):
+    def __init__(self, config, corpus, noises, output, *, synthesis_cache_root=None):
         self.config, self.corpus = dict(config), corpus
+        self.mixing_protocol = config.get("mixing_protocol", "source_rms_wrap_v1")
+        if self.mixing_protocol not in {"source_rms_wrap_v1", "window_rms_no_wrap_v2"}:
+            raise ValueError("Unknown mixing protocol")
         self.noises = []
         for entry in noises:
-            if not entry.get("verified_by_listening"):
-                raise ValueError("Listen to noise selections, verify their type, and mark them verified first")
-            audio, _ = audio_read(entry["path"], 8000)
+            deterministic_panel = entry.get("selection_basis") == "deterministic_musan_panel_v1"
+            if not entry.get("verified_by_listening") and not deterministic_panel:
+                raise ValueError("Noise sources need listening verification or the frozen deterministic MUSAN panel protocol")
+            if self.mixing_protocol == "window_rms_no_wrap_v2":
+                audio, _ = audio_read_window(
+                    entry["path"], entry["offset_s"], entry["minimum_window_s"], 8000
+                )
+                sample_offset_s = entry["offset_s"]
+            else:
+                audio, _ = audio_read(entry["path"], 8000)
+                sample_offset_s = 0.0
             if rms(audio) < 1e-8:
                 raise ValueError("Silent noise file")
-            if not 0 <= entry["offset_s"] * 8000 < len(audio):
+            if self.mixing_protocol != "window_rms_no_wrap_v2" and not 0 <= entry["offset_s"] * 8000 < len(audio):
                 raise ValueError("Noise offset is outside the source clip")
             self.noises.append({**entry, "sha256": file_hash(entry["path"]), "samples": audio,
-                                "reference_rms": rms(audio)})
+                                "samples_offset_s": sample_offset_s, "reference_rms": rms(audio)})
         if len({n["id"] for n in noises}) != len(noises) or len(noises) < 2:
             raise ValueError("Provide at least two uniquely named noise sources")
         if config["model_id"] != "coda" or config["phone_sample_rate"] != 8000:
             raise ValueError("This experiment pins Coda and a simulated 8 kHz PCMU path")
         self.level_method = "20ms_frames_within_40dB_of_peak_power_v1"
+        snr_definition = ("active speech RMS / extracted noise-window RMS; no wrapping"
+                          if self.mixing_protocol == "window_rms_no_wrap_v2"
+                          else "active speech RMS / full noise source RMS; fixed noise gain across durations")
         manifest = {"config": config, "corpus": corpus, "implementation_sha256": file_hash(__file__),
                     "speech_level_method": self.level_method,
-                    "snr_definition": "active speech RMS / full noise source RMS; fixed noise gain across durations",
-                    "noise": [{k: v for k, v in n.items() if k != "samples"} for n in self.noises]}
+                    "snr_definition": snr_definition,
+                    "noise": [{k: v for k, v in n.items() if k not in {"samples", "samples_offset_s"}}
+                              for n in self.noises]}
         self.fingerprint = digest(manifest)
         self.root = Path(output) / self.fingerprint[:16]
         self.root.mkdir(parents=True, exist_ok=True)
@@ -284,7 +321,8 @@ class Experiment:
         # Shared across evaluation grids; payload+replicate still determines each WAV.
         synthesis_scope = {k: config[k] for k in ("endpoint", "model_id", "speaker", "language", "sample_rate")}
         synthesis_scope["protocol"] = "rime_wav_v1"
-        self.audio_cache = Path(output) / "synthesis_cache" / digest(synthesis_scope)[:16]
+        cache_root = Path(synthesis_cache_root) if synthesis_cache_root else Path(output) / "synthesis_cache"
+        self.audio_cache = cache_root / digest(synthesis_scope)[:16]
         self.audio_cache.mkdir(parents=True, exist_ok=True)
         self.ledger_path = self.audio_cache / "request_ledger.json"
         save_json(self.root / "synthesis_cache.json", {"path": str(self.audio_cache), "scope": synthesis_scope,
@@ -335,6 +373,16 @@ class Experiment:
         save_json(meta_path, meta)
         return path, meta
 
+    def synthesis_cache_paths(self, item, variant, replicate):
+        """Return cached WAV/metadata paths without making a billed request."""
+        text, speed = self.variant(item, variant)
+        payload = {"text": text, "modelId": self.config["model_id"], "speaker": self.config["speaker"],
+                   "lang": self.config["language"], "samplingRate": self.config["sample_rate"],
+                   "timeScaleFactor": speed}
+        cache_id = digest({"payload": payload, "replicate": replicate, "endpoint": self.config["endpoint"]})
+        path = self.audio_cache / f"{cache_id}.wav"
+        return path, path.with_suffix(".json")
+
     def transcribe(self, path):
         from faster_whisper import WhisperModel
         if self._asr is None:
@@ -367,7 +415,7 @@ class Experiment:
         scores = np.mean(values, axis=0)
         return dict(zip(["dnsmos_sig", "dnsmos_bak", "dnsmos_ovrl"], map(float, scores)))
 
-    def run(self, split, variants, key):
+    def run(self, split, variants, key, *, item_ids=None, noise_ids=None, snrs=None, include_clean=True):
         from jiwer import wer
         from pystoi import stoi
         if split not in {"dev", "heldout"}:
@@ -376,15 +424,28 @@ class Experiment:
             decision = json.loads((self.root / "selection.json").read_text())
             if set(variants) != {"baseline", decision["variant"]}:
                 raise ValueError("Held-out evaluation must use only the frozen candidate and baseline")
+        item_ids = set(item_ids) if item_ids is not None else None
+        selected_noises = [noise for noise in self.noises if noise_ids is None or noise["id"] in set(noise_ids)]
+        selected_snrs = list(self.config["snrs_db"] if snrs is None else snrs)
+        if noise_ids is not None and {noise["id"] for noise in selected_noises} != set(noise_ids):
+            raise ValueError("Unknown requested noise ID")
+        if not set(selected_snrs).issubset(self.config["snrs_db"]):
+            raise ValueError("Requested SNR is outside the frozen grid")
         rows = []
-        jobs = [(item, variant, rep) for item in self.corpus if item["split"] == split
+        jobs = [(item, variant, rep) for item in self.corpus
+                if item["split"] == split and (item_ids is None or item["id"] in item_ids)
                 for variant in variants for rep in range(self.config["replicates"])]
+        if item_ids is not None and {item["id"] for item, _, _ in jobs} != item_ids:
+            raise ValueError("Unknown requested text ID")
         np.random.default_rng(self.config["seed"]).shuffle(jobs)
         for index, (item, variant, rep) in enumerate(jobs):
             original, synth = self.synthesize(item, variant, rep, key)
+            source_audio_sha256 = file_hash(original)
             speech, sr = audio_read(original)
             phone = level_active(phone_roundtrip(speech, sr), self.config["speech_rms_dbfs"])
-            cases = [("clean", None, None)] + [(n["id"], snr, n) for n in self.noises for snr in self.config["snrs_db"]]
+            cases = ([("clean", None, None)] if include_clean else []) + [
+                (noise["id"], snr, noise) for noise in selected_noises for snr in selected_snrs
+            ]
             for noise_id, snr, noise in cases:
                 condition = "clean" if snr is None else f"{noise_id}_{snr}dB"
                 clip_id = f"{item['id']}_{variant}_r{rep}_{condition}"
@@ -396,11 +457,22 @@ class Experiment:
                     rows.append(previous)
                     continue
                 mixture, measured, looped = phone, None, False
+                speech_reference, window_reference, noise_gain = active_rms(phone), None, None
                 if noise is not None:
-                    segment, looped = noise_window(noise["samples"], len(phone), int(noise["offset_s"] * 8000))
+                    segment, looped = noise_window(
+                        noise["samples"], len(phone),
+                        int((noise["offset_s"] - noise["samples_offset_s"]) * 8000),
+                        wrap=self.mixing_protocol != "window_rms_no_wrap_v2",
+                    )
+                    window_reference = rms(segment)
+                    calibration_reference = (window_reference if self.mixing_protocol == "window_rms_no_wrap_v2"
+                                             else noise["reference_rms"])
+                    noise_gain = speech_reference / (calibration_reference * 10 ** (snr / 20))
                     mixture, measured = mix_noise(phone, segment, snr,
-                                                 speech_reference_rms=active_rms(phone),
-                                                 noise_reference_rms=noise["reference_rms"])
+                                                 speech_reference_rms=speech_reference,
+                                                 noise_reference_rms=calibration_reference)
+                    if self.mixing_protocol == "window_rms_no_wrap_v2" and abs(measured - snr) > 0.1:
+                        raise ValueError("Measured SNR differs from the frozen request by more than 0.1 dB")
                 path = self.root / "clips" / f"{clip_id}.wav"
                 path.parent.mkdir(exist_ok=True)
                 sf.write(path, mixture, 8000, subtype="FLOAT")
@@ -414,9 +486,13 @@ class Experiment:
                           "noise_offset_s": noise["offset_s"] if noise else None, "noise_looped": looped,
                           "noise_kind": noise.get("kind", noise_id) if noise else "clean",
                           "noise_reference_rms": noise["reference_rms"] if noise else None,
+                          "noise_window_rms": window_reference, "noise_gain": noise_gain,
+                          "mixing_protocol": self.mixing_protocol,
                           "speech_level_method": self.level_method, "sample_rate": 8000,
-                          "speech_active_rms_dbfs": 20 * math.log10(active_rms(phone)),
-                          "snr_definition": "active speech / full source noise RMS; fixed gain",
+                          "speech_active_rms_dbfs": 20 * math.log10(speech_reference),
+                          "snr_definition": ("active speech / extracted noise-window RMS; no wrapping"
+                                             if self.mixing_protocol == "window_rms_no_wrap_v2"
+                                             else "active speech / full source noise RMS; fixed gain"),
                           "reference_text": text, "transcript": transcript,
                           "wer": float(wer(normalize(text), normalize(transcript))),
                           "fact_recovery": facts, "fact_details": details, "fact_count": len(item["facts"]),
@@ -424,6 +500,7 @@ class Experiment:
                           "estoi": float(stoi(phone, mixture, 8000, extended=True)) if noise else None,
                           "duration_s": len(phone) / 8000, "format_duration_delta_s": len(phone) / 8000 - len(speech) / sr,
                           "audio_path": str(path), "audio_sha256": file_hash(path), "source_audio": str(original),
+                          "source_audio_sha256": source_audio_sha256,
                           "raw_peak": synth["raw_peak"], "synthesis_cached": synth["cached"],
                           "client_first_chunk_s": None if synth["cached"] else synth["client_first_chunk_s"],
                           "time_scale_factor": speed, "transport": "HTTP WAV -> local PCMU roundtrip",

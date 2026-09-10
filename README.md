@@ -1,26 +1,40 @@
-# Noise-Masking Test
+# Noise Grid v2 and Breakpoint Analysis
 
-Branch: `noise-masking-test`.
+Branch: `codex/noise-grid-v2`.
 
-Project scope: **Noise-Masking Test → Noise-Conditioned Delivery A/B**. Grid/Breakpoint Analysis was retired after this test produced a qualifying stress condition. Shared planning documents live only on `main`: [hackathon guidelines](https://github.com/Drazr/DataForge/blob/main/HACKATHON_GUIDELINES.md), [implementation roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md), and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods remain unchanged.
+This branch measures where the existing Coda baseline begins to lose critical
+facts as noise increases. It replaces the earlier two-point masking pilot with a
+precommitted five-point grid: **+15, +10, +5, 0 and -5 dB** across two MUSAN
+speech recordings and two MUSAN environmental recordings.
 
-Copy the ten cells in [colab_noise_masking.py](colab_noise_masking.py) into Colab.
-Exactly three blank lines separate cells. The first two mount Drive and clone
-this branch. This workflow generates the baseline only: fixed speech, phone codec,
-noise sweep, ASR fact/word recovery, ESTOI, DNSMOS and diagnostic exports.
+The producer uses the seven critical development texts and two already-cached
+Rime syntheses per text. Its complete core is **294 scores**: 14 clean controls
+plus 280 noisy clips. It does not synthesize new speech and does not access the
+held-out split. Each utterance uses an actual non-looping noise window whose RMS
+is calibrated separately; nominal and measured SNR are retained.
 
-Follow [the runbook](docs/COLAB_RUNBOOK.md). Results are saved under
-`MyDrive/DataForge/noise_masking/outputs/<run-id>/`. No real results are bundled.
+Run the ten cells in [colab_noise_masking.py](colab_noise_masking.py) in a GPU
+Colab notebook. It verifies the completed source baseline and its 14 cache files,
+selects a deterministic four-recording noise panel, runs a 12-score timed
+preflight, checkpoints every result, and exports `ready_for_grid.json` only after
+all 294 rows pass the contract.
 
-[Branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md) explains how Delivery A/B copies these outputs. The audio/scoring library and corpus also carry the frozen
-intervention definitions needed by the separate A/B consumer; this notebook never
-runs or selects those interventions. Keep both test branches at compatible scoring
-versions when transferring evidence.
+Then run the seven cells in [colab_grid_analysis.py](colab_grid_analysis.py) in a
+separate CPU notebook. It computes matched adjacent-SNR deterioration, clustered
+uncertainty across texts, the preregistered 90% critical-fact threshold, and
+supporting WER, ESTOI, and DNSMOS summaries. DNSMOS is a quality diagnostic; it
+does not define a breakpoint.
 
-Local checks: `python -m unittest discover -s tests -v` after installing
-`requirements-colab.txt` and FFmpeg. These are software checks, not measured
-Rime experiments or human comprehension results.
+Use [the Colab runbook](docs/COLAB_RUNBOOK.md), [analysis runbook](docs/GRID_ANALYSIS_RUNBOOK.md),
+and [input contract](docs/GRID_ANALYSIS_INPUTS.md). Problems and countermeasures
+are recorded in [TROUBLESHOOTING.md](TROUBLESHOOTING.md) in encounter order.
 
-Session problems, countermeasures and current evidence are tracked in
-[TROUBLESHOOTING.md](TROUBLESHOOTING.md). Cell 10 adds an optional saved-transcript
-review and export; it makes no TTS/ASR calls and preserves the original run.
+Local verification:
+
+```shell
+python -m pip install -r requirements-colab.txt
+python -m unittest discover -s tests -v
+```
+
+Tests use synthetic fixtures. No measured experiment result or MUSAN audio is
+committed to Git.
