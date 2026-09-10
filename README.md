@@ -12,7 +12,7 @@ The first two pilot experiments have completed development evaluation. Their cod
 
 1. [Noise-Masking Test](https://github.com/Drazr/DataForge/tree/noise-masking-test) — `colab_noise_masking.py`.
 2. [Noise-Conditioned Delivery A/B](https://github.com/Drazr/DataForge/tree/noise-conditioned-ab) — `colab_noise_ab.py`.
-3. [Noise Grid v2](https://github.com/Drazr/DataForge/tree/codex/noise-grid-v2) — `colab_noise_masking.py` for GPU measurement, then `colab_grid_analysis.py` for CPU analysis.
+3. [Noise Grid v2](https://github.com/Drazr/DataForge/tree/codex/noise-grid-v2) — `colab_noise_masking.py` for CPU INT8 measurement, then `colab_grid_analysis.py` for CPU analysis.
 
 Each test branch retains its own code, dependencies, tests and runbook, and links here for shared planning and handoff instructions. This branch contains no experiment implementation.
 
@@ -23,7 +23,7 @@ evaluation was not run and human review remains pending. Compact evidence is on
 `noise-conditioned-ab` at commit `4ddef62`. The next experiment is
 [Noise grid v2](docs/NOISE_GRID_V2_PROTOCOL.md): a 294-score critical-text grid
 using cached baseline speech, followed by CPU-only breakpoint analysis. The
-tested implementation is on `codex/noise-grid-v2` at commit `859085e`.
+tested CPU implementation is on `codex/noise-grid-v2` at commit `24c5553`.
 
 Project-level scope decisions and their reasons are recorded in
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Each active test branch maintains its

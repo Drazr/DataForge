@@ -19,7 +19,7 @@ code revisions during a frozen run without checking producer/consumer compatibil
 
 The two original pilots completed development evaluation. Next is
 [Noise grid v2](NOISE_GRID_V2_PROTOCOL.md), implemented on
-`codex/noise-grid-v2` at `859085e`. Its producer verifies and reuses 14
+`codex/noise-grid-v2` at `24c5553`. Its producer verifies and reuses 14
 critical-text syntheses and the frozen evaluator configuration while writing a
 separate 294-score run with versioned noise calibration. Its second notebook
 analyzes that run on CPU. The original experiment branches remain available.

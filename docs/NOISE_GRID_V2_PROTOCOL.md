@@ -2,7 +2,7 @@
 
 Decision date: 2026-09-10. Status: **core implementation complete and locally
 validated; Colab execution pending**. The implementation is on
-`codex/noise-grid-v2` at commit `859085e`; the old retired grid notebook is
+`codex/noise-grid-v2` at commit `24c5553`; the old retired grid notebook is
 not the v2 workflow.
 
 ## Objective and prior evidence
@@ -43,8 +43,10 @@ measurement or gate in v2. Do not relax its old gate retrospectively.
 - Keep the original 9 held-out texts out of synthesis, ASR, model review and charts.
   Reused development texts make this an exploratory extension, not a fresh blind test.
 - Keep the producer's pinned `Systran/faster-whisper-small.en` revision
-  `d1d751a5f8271d482d14ca55d9e2deeebbae577f`, beam size 5, CUDA float16, and corrected
-  fact/time scorer. Assert configuration and source hashes before accepting caches.
+  `d1d751a5f8271d482d14ca55d9e2deeebbae577f`, beam size 5, CPU INT8, and corrected
+  fact/time scorer. Rescore all v2 clean and noisy rows on that backend; do not
+  mix its scores with the earlier CUDA float16 run. Assert source hashes before
+  accepting caches.
 - Keep DNSMOS enabled with the producer's pinned ONNX model/revision. Preserve
   its input resampling and score computation. No Qwen or second large model is
   required during the main run.
@@ -158,8 +160,8 @@ Core total: **294**. Rescore the 14 cached clean audio files with the same
 evaluator used for v2 so every core row shares one scorer and configuration.
 No billed synthesis, new dataset download or 7B model review is required.
 
-Use one Colab GPU runtime (T4 sufficient for the existing small ASR model) for
-mixing/scoring and a separate CPU notebook for analysis and plotting.
+Use one Colab CPU runtime with Faster-Whisper INT8 for mixing/scoring and a
+separate CPU notebook for analysis and plotting.
 `colab_noise_masking.py` contains the producer setup, freeze, preflight,
 core-score and export cells. `colab_grid_analysis.py` consumes its completion
 marker and creates a new timestamped analysis. Both use Drive persistence.
@@ -174,13 +176,13 @@ writes, real ASR/DNSMOS/codec availability and a clean/easy/hard sample set.
 
 Time 12 representative scored conditions, including long critical clips, to
 estimate remaining runtime and export that estimate. Do not promise 30 minutes
-before measuring. A GPU disconnect pauses the run; it does not change precision,
-switch evaluators or authorize extra TTS. Skip optional stages if quota is tight
+before measuring. A runtime disconnect pauses the run; it does not change precision,
+switch evaluators or authorize extra TTS. Skip optional stages if time is tight
 and report their absence. The core result remains useful on its own.
 
 ## Implementation and handoff
 
-Implemented on `codex/noise-grid-v2` at `859085e`, based on the current
+Implemented on `codex/noise-grid-v2` at `24c5553`, based on the current
 Noise-Masking code and corrected scorer. The old analysis was adapted for Python
 3.13, the new source/window/calibration schema, DNSMOS support, complete-grid
 checks and text-clustered analysis. Local validation passed 62 tests. No old

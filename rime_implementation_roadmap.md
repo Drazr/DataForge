@@ -35,7 +35,7 @@ Output: `MyDrive/DataForge/delivery_ab/outputs/<run-id>/`.
 
 Noise grid v2 is the next experiment. Its core reuses 14 cached critical-text
 speech realizations and adds four noise recordings at five SNR levels for 294
-scores. A GPU notebook produces resumable measurements; a separate CPU notebook
+scores. A CPU INT8 notebook produces resumable measurements; a separate CPU notebook
 validates the contract and computes breakpoint intervals. Midpoint and second-
 offset checks remain bounded follow-ups chosen only after the core report.
 Embedded codec/preflight validation and quality metrics remain part of the workflow.

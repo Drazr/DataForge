@@ -16,6 +16,7 @@ test branch's `TROUBLESHOOTING.md`; this file records shared scope decisions.
 | 9 | Whole-recording noise RMS and wrapping make nominal SNR harder to interpret. | V2 calibrates actual non-looping noise windows and logs measured SNR; version the change and retain prior measurements separately. | Specified in `docs/NOISE_GRID_V2_PROTOCOL.md`. |
 | 10 | Repeated large-model downloads and runtime resets consumed GPU quota. | Reuse shared assets, score with the existing small ASR model, checkpoint per row, and estimate runtime from a timed preflight. | No new TTS or Qwen review planned for v2. |
 | 11 | The first v2 specification used all 42 development syntheses, although only seven texts have labeled facts for the primary endpoint. | Restrict the core to seven critical texts and keep WER/ESTOI/DNSMOS as diagnostics on the same 294 rows. This preserves the primary breakpoint question within available GPU time. | Implemented and tested on `codex/noise-grid-v2` at `859085e`; measurements pending. |
+| 12 | The user exhausted Colab GPU quota before the v2 run. | Move the complete v2 scorer to CPU INT8, including clean controls, and retain the 12-score preflight plus per-row checkpoints. This avoids GPU dependence while keeping one evaluator backend within the run. | Implemented at `24c5553`; CPU execution pending. |
 
 Retiring Grid does not turn the two-point stress sweep into breakpoint evidence.
 Claims remain limited to the tested conditions and the simulated 8 kHz PCMU path.
