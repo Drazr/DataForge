@@ -57,14 +57,14 @@ includes the CPU analysis command and unchanged source provenance.
 Confidence bounds are hidden by the pasted dataframe display; their numeric
 values cannot be reconstructed from these means and have not been fabricated.
 
-## Product engineering claim to validate
+## Product engineering claim
 
-The proposed product should withhold confirmation on suspected competing speech
-and require authoritative critical-fact read-back before accepting an ambiguous
-response. The existing foundation already supplies Rime speech, targeted replay
-and a fresh-response gate. Automatic detection and fact read-back remain to build;
-no detector accuracy, speaker identity, comprehension or mitigation improvement
-has been measured.
+When a caller reports hearing difficulty, the product withholds confirmation and
+requires authoritative reference-code and appointment-time read-back before it
+accepts “yes.” Wrong or partial read-back fails closed. The product supplies Rime
+speech, targeted replay, a fresh-response gate, and this read-back policy.
+Automatic competing-speech detection is not installed; no detector accuracy,
+speaker identity, human comprehension, or mitigation improvement has been measured.
 
 [Product procedure](docs/PRODUCT_EVIDENCE.md) defines the next validation.
 Record normal and stress cases, false confirmations and unresolved cases on the
@@ -82,7 +82,8 @@ these product defaults for missing experimental provenance.
 ASR fact recovery and WER are proxies, not measured human comprehension.
 Clean fact recovery was 94.90%, not perfect. Seven texts and two recordings per
 noise family do not establish generalization. Product read-back checks cannot
-authenticate speakers by themselves. Source audio, full analysis exports and a
-credentialed product run have not yet been added to this package.
+authenticate speakers by themselves. Full analysis exports and three selected,
+hash-verified source-audio clips are included. A credentialed final-product run
+has not yet been added.
 
 The submission evidence concerns competing speech and critical facts only.

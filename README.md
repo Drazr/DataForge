@@ -4,21 +4,24 @@ A local browser voice product with a guided conversation, Rime speech, explicit 
 
 This is the `final-product` branch, based on `product-foundation` commit
 `826a5df`. It retains the working voice foundation and adds the completed
-competing-speech grid evidence plus a focused build/submission plan.
+competing-speech grid evidence, risk-aware confirmation, and critical-fact read-back.
 
-**Current status:** guided speech, repeat requests, caching and explicit
-confirmation exist. Competing-speech detection, risk-aware confirmation and
-critical-fact read-back remain to implement and validate. The study reported
-zero supported breakpoint crossings; 5 dB is only an observed aggregate risk
-region in two speech recordings. No universal threshold or mitigation benefit
-is claimed.
+**Current status:** guided speech, repeat requests, caching, explicit confirmation,
+and strict code/time read-back after reported hearing difficulty are implemented.
+Automatic competing-speech detection is not installed: risk is triggered by the
+user or by a visibly disclosed test-mode injection. The study reported zero
+supported breakpoint crossings; 5 dB is an observed aggregate risk region in two
+speech recordings. No universal threshold, detector accuracy, human-comprehension,
+or mitigation-improvement claim is made.
 
 Start with [engineering methods](docs/ENGINEERING_PLAN.md),
 [focused evidence](RIME_EVIDENCE.md), [submission checklist](docs/SUBMISSION_CHECKLIST.md),
 and [ordered development log](docs/DEVELOPMENT_LOG.md).
 The existing backend/frontend and their dependency locks are all in this branch.
-The original Colab outputs are archived; full machine-readable results and
-selected demo audio still need to be transferred.
+The original Colab outputs, full machine-readable analysis results, and three
+hash-verified clean/competing-speech clips are archived in this branch.
+[Repository and demo links](DEMO_LINK.md) is the stable handoff to the public
+Google Doc containing the repository and final recording URLs.
 
 ## Run locally
 
@@ -51,8 +54,10 @@ Open http://127.0.0.1:3000 and select **Start voice session**. Allow microphone 
 
 No hosted deployment or SIP setup is required. The Python service owns the voice workers in the same process; run one Uvicorn process because session state is in memory. Sessions expire after 20 minutes. Up to four active sessions are accepted. Stop both terminal processes to end the local application.
 
-The selected catalog methods for this foundation are disclosed fallback handling
-and content-specific phrase/audio caching. The proposed additions are specified in the engineering plan; automatic speech-risk detection is not yet part of runtime behavior.
+The catalog methods used by the working product are LiveKit turn-taking and
+transport, disclosed fallback handling, and content-specific phrase/audio caching.
+Risk-aware confirmation and authoritative fact read-back are evidence-motivated
+countermeasures. Automatic speech-risk detection is not part of runtime behavior.
 
 ## Conversation behavior
 
@@ -63,8 +68,14 @@ The assistant reads the appointment time (including date and timezone), location
 - “Repeat that”, “Say that again”, “Repeat the last detail.”
 - “Repeat the time”, “Say the reference code again”, “What is the location?”
 - “Stop”, “End the session”, “Goodbye.”
+- “I hear another voice”, “Too noisy”, “Someone else is speaking.”
 
 Polite prefixes and suffixes are accepted. Mixed, conditional, unsupported, or ambiguous requests trigger clarification. Two unclear replies end the session unconfirmed. These are product defaults, not outcomes of the noise experiments.
+
+After hearing difficulty is reported, a plain “yes” cannot confirm. The caller
+must first repeat the full reference code and appointment time. Wrong or partial
+values are retried once, then the session ends unconfirmed. Exported events store
+match outcomes without retaining the caller's raw fact transcript.
 
 Confirmation requires all required details and the confirmation question to finish playing, then a fresh affirmative utterance. Replies received while the assistant is playing audio are discarded. Playback completion is a sender-side event and is not a claim that someone heard or understood the audio.
 
