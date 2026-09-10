@@ -23,7 +23,7 @@ evaluation was not run and human review remains pending. Compact evidence is on
 `noise-conditioned-ab` at commit `4ddef62`. The next experiment is
 [Noise grid v2](docs/NOISE_GRID_V2_PROTOCOL.md): a 294-score critical-text grid
 using cached baseline speech, followed by CPU-only breakpoint analysis. The
-tested CPU implementation is on `codex/noise-grid-v2` at commit `24c5553`.
+tested CPU implementation is on `codex/noise-grid-v2` at commit `0474bb3`.
 
 Project-level scope decisions and their reasons are recorded in
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Each active test branch maintains its

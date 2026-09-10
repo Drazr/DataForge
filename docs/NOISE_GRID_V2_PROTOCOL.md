@@ -2,7 +2,7 @@
 
 Decision date: 2026-09-10. Status: **core implementation complete and locally
 validated; Colab execution pending**. The implementation is on
-`codex/noise-grid-v2` at commit `24c5553`; the old retired grid notebook is
+`codex/noise-grid-v2` at commit `0474bb3`; the old retired grid notebook is
 not the v2 workflow.
 
 ## Objective and prior evidence
@@ -33,7 +33,10 @@ measurement or gate in v2. Do not relax its old gate retrospectively.
   has labeled facts only on these texts, so excluding general texts reduces GPU
   scoring without removing an eligible fact observation.
 - Preserve Rime Coda / Celeste / English, the producer's sampling settings,
-  8 kHz PCMU roundtrip and -26 dBFS active-speech leveling. No new TTS calls are
+  8 kHz PCMU roundtrip and a -26 dBFS preferred active-speech ceiling. Before
+  creating the v2 run, audit every exact speech/noise/SNR combination and lower
+  all speech globally in 0.5 dB steps when needed to keep the predicted mixture
+  peak at or below 0.90. Save that frozen level and audit. No new TTS calls are
   planned. Do not send already decoded phone audio through PCMU a second time.
 - Verify the producer manifest, synthesis ledger and SHA-256 of every reused
   clean audio file. Missing/corrupt speech is a preflight failure; no silent
@@ -182,7 +185,7 @@ and report their absence. The core result remains useful on its own.
 
 ## Implementation and handoff
 
-Implemented on `codex/noise-grid-v2` at `24c5553`, based on the current
+Implemented on `codex/noise-grid-v2` at `0474bb3`, based on the current
 Noise-Masking code and corrected scorer. The old analysis was adapted for Python
 3.13, the new source/window/calibration schema, DNSMOS support, complete-grid
 checks and text-clustered analysis. Local validation passed 62 tests. No old
