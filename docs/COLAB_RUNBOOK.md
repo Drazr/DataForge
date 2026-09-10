@@ -1,6 +1,7 @@
 # Noise Grid v2 in Colab
 
-Use a GPU runtime for `colab_noise_masking.py`; a T4 is sufficient. Keep the
+Use a standard CPU runtime for `colab_noise_masking.py`. Faster-Whisper runs
+with CPU INT8 and DNSMOS already uses CPU, so no GPU quota is required. Keep the
 existing MUSAN copy and source baseline under `MyDrive/DataForge`. The producer
 requires baseline run `6bd1eb398398af0e` and its shared synthesis cache.
 
@@ -17,7 +18,7 @@ requires baseline run `6bd1eb398398af0e` and its shared synthesis cache.
    metadata files already exist with matching hashes. It stops before any Rime
    request if the cache is incomplete.
 6. Cell 8 scores a 12-row timed preflight and prints a full-run estimate. Share
-   that estimate if GPU time is tight. Saved rows are reusable by Cell 9.
+   that estimate before committing several CPU hours. Saved rows are reusable by Cell 9.
 7. Cell 9 runs the complete grid. Rerunning it resumes from saved JSON rows.
 8. Cell 10 verifies all 294 keys, exports summaries and failure evidence, and
    writes `ready_for_grid.json`.

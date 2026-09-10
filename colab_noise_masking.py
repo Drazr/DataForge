@@ -78,16 +78,12 @@ config = json.loads((REPO / "experiment.json").read_text())
 config.update(seed=20260910, snrs_db=[15, 10, 5, 0, -5],
               baseline_profile="noise_grid_v2_critical",
               mixing_protocol="window_rms_no_wrap_v2",
-              asr_device="cuda", asr_compute_type="float16")
+              asr_device="cpu", asr_compute_type="int8")
 for key in ("model_id", "speaker", "language", "endpoint", "sample_rate",
             "phone_sample_rate", "speech_rms_dbfs", "asr_repo", "asr_beam_size"):
     if source_manifest["config"][key] != config[key]:
         raise ValueError(f"V2 changed frozen producer control: {key}")
-try:
-    gpu = subprocess.run(["nvidia-smi", "-L"], check=True, capture_output=True, text=True).stdout.strip()
-except (FileNotFoundError, subprocess.CalledProcessError) as error:
-    raise RuntimeError("Select a T4 GPU, restart, and rerun Cells 1-2 and 4") from error
-print("GPU evaluator:", gpu)
+print("Evaluator backend: CPU INT8. A GPU runtime is not required.")
 
 all_corpus = load_corpus(REPO / "fixtures/corpus.json")
 corpus = [item for item in all_corpus if item["split"] == "dev" and item["facts"]]
@@ -210,7 +206,7 @@ save_json(experiment.root / "runtime_preflight.json", {
 })
 display(preflight[["text_id", "replicate", "condition", "wer", "fact_recovery", "dnsmos_ovrl"]])
 print(f"Timed {len(preflight)} scores in {elapsed / 60:.1f} min; rough full-run estimate: {estimate_minutes:.1f} min.")
-print("If quota is insufficient, stop here and resume from the same Drive run in another GPU account.")
+print("If the estimate is too long, stop here; the 12 saved rows remain reusable in another CPU session.")
 
 
 

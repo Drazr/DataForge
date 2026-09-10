@@ -121,11 +121,12 @@ class AudioTests(unittest.TestCase):
         self.assertIn('baseline_profile="noise_grid_v2_critical"', source)
         self.assertIn('snrs_db=[15, 10, 5, 0, -5]', source)
         self.assertIn('mixing_protocol="window_rms_no_wrap_v2"', source)
+        self.assertIn('asr_device="cpu", asr_compute_type="int8"', source)
         self.assertIn('if planned_scores != 294:', source)
         self.assertIn('if len(corpus) != 7 or any(item not in source_manifest["corpus"] for item in corpus):', source)
         self.assertIn('synthesis_cache_root=source_cache_root', source)
         self.assertIn('if missing_cache:', source)
-        self.assertIn('["nvidia-smi", "-L"]', source)
+        self.assertNotIn('["nvidia-smi", "-L"]', source)
         self.assertIn('if not baseline.synthesis_cached.all():', source)
         self.assertIn('"dnsmos_enabled": true', (ROOT / "experiment.json").read_text())
 

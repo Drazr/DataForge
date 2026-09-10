@@ -13,8 +13,9 @@ plus 280 noisy clips. It does not synthesize new speech and does not access the
 held-out split. Each utterance uses an actual non-looping noise window whose RMS
 is calibrated separately; nominal and measured SNR are retained.
 
-Run the ten cells in [colab_noise_masking.py](colab_noise_masking.py) in a GPU
-Colab notebook. It verifies the completed source baseline and its 14 cache files,
+Run the ten cells in [colab_noise_masking.py](colab_noise_masking.py) in a CPU
+Colab notebook. Faster-Whisper uses CPU INT8; no GPU quota is required. The
+notebook verifies the completed source baseline and its 14 cache files,
 selects a deterministic four-recording noise panel, runs a 12-score timed
 preflight, checkpoints every result, and exports `ready_for_grid.json` only after
 all 294 rows pass the contract.
