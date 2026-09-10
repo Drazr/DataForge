@@ -1,8 +1,9 @@
 # Noise grid v2: baseline and breakpoint decisions
 
-Decision date: 2026-09-10. Status: **setup specification approved through delegated
-design decisions; implementation and experimental execution pending**. This document
-defines the next experiment. It does not claim the old Colab grid notebook is ready.
+Decision date: 2026-09-10. Status: **core implementation complete and locally
+validated; Colab execution pending**. The implementation is on
+`codex/noise-grid-v2` at commit `859085e`; the old retired grid notebook is
+not the v2 workflow.
 
 ## Objective and prior evidence
 
@@ -27,8 +28,10 @@ measurement or gate in v2. Do not relax its old gate retrospectively.
 
 ## Frozen reference speech and measurement controls
 
-- Reuse the 42 existing baseline speech realizations: 21 development texts,
-  including seven critical texts, with two synthesis replicates per text.
+- Reuse the 14 existing critical-text baseline speech realizations: seven
+  development texts with two synthesis replicates per text. The primary endpoint
+  has labeled facts only on these texts, so excluding general texts reduces GPU
+  scoring without removing an eligible fact observation.
 - Preserve Rime Coda / Celeste / English, the producer's sampling settings,
   8 kHz PCMU roundtrip and -26 dBFS active-speech leveling. No new TTS calls are
   planned. Do not send already decoded phone audio through PCMU a second time.
@@ -132,7 +135,8 @@ located in the tested range. A qualifying interval is not guaranteed.
    crossing, then the number with repeatable practical deterioration, then the
    larger mean positive fact-recovery drop, then the higher-SNR endpoint.
    Only intervals meeting either criterion qualify; if none qualify, skip refinement.
-   Score a chosen midpoint across all four recordings and all 42 speech clips.
+   Score a chosen midpoint across all four recordings and all 14 critical-text
+   speech realizations.
 3. For each recording with a qualifying coarse interval, use its highest-ranked
    interval's two original endpoints at preselected offset B. Score only the
    seven critical texts and their two replicates. This checks offset stability;
@@ -144,21 +148,21 @@ located in the tested range. A qualifying interval is not guaranteed.
 
 | Stage | Maximum scored conditions |
 | --- | ---: |
-| Clean reference: 21 texts x 2 replicates | 42 |
-| Coarse noisy grid: 42 x 4 recordings x 5 SNRs | 840 |
-| Optional midpoint refinement: 42 x 4 x 2 | 336 |
+| Clean reference: 7 texts x 2 replicates | 14 |
+| Coarse noisy grid: 14 x 4 recordings x 5 SNRs | 280 |
+| Optional midpoint refinement: 14 x 4 x 2 | 112 |
 | Optional offset B check: 14 x 4 x 2 endpoints | 112 |
-| Total maximum, including cached clean scores | **1,330** |
+| Total maximum, including cached clean scores | **518** |
 
-Core total: **882**. Reuse 42 clean scores only when audio/scorer/model/settings
-match exactly; otherwise rescore those existing audio files and record why.
+Core total: **294**. Rescore the 14 cached clean audio files with the same
+evaluator used for v2 so every core row shares one scorer and configuration.
 No billed synthesis, new dataset download or 7B model review is required.
 
 Use one Colab GPU runtime (T4 sufficient for the existing small ASR model) for
-scoring and CPU for mixing, analysis and plotting. The retired analysis-only grid
-notebook cannot generate new measurements. Use one future notebook with separate
-setup, freeze/preflight, core-score, analysis, optional-refinement and export cells.
-Keep inference and analysis independently resumable from Drive.
+mixing/scoring and a separate CPU notebook for analysis and plotting.
+`colab_noise_masking.py` contains the producer setup, freeze, preflight,
+core-score and export cells. `colab_grid_analysis.py` consumes its completion
+marker and creates a new timestamped analysis. Both use Drive persistence.
 
 Store new runs under `MyDrive/DataForge/noise_grid_v2/outputs/<run-id>/`. Assets stay
 in the existing shared `data/` and `models/` folders. Put temporary working audio
@@ -176,12 +180,11 @@ and report their absence. The core result remains useful on its own.
 
 ## Implementation and handoff
 
-Implement later on `codex/noise-grid-v2`, based on the current Noise-Masking code
-and corrected scorer. Port and adapt the old analysis logic after reviewing its
-pairing assumptions, Python 3.13 support and new source/offset/calibration schema.
-Do not revive the retired branch's notebook unchanged. Add tests for calibration,
-no wrapping, matched noise prefixes, cache identity, complete grids and clustered
-analysis before providing Colab cells. No old experiment files are overwritten.
+Implemented on `codex/noise-grid-v2` at `859085e`, based on the current
+Noise-Masking code and corrected scorer. The old analysis was adapted for Python
+3.13, the new source/window/calibration schema, DNSMOS support, complete-grid
+checks and text-clustered analysis. Local validation passed 62 tests. No old
+experiment files are overwritten.
 
 Before scoring, save this protocol, source selection manifest, resolved dependency
 and model versions, commit/scorer hashes, full condition count and budget. Export

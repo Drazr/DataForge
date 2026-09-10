@@ -2,7 +2,11 @@
 
 ## Active scope and execution order
 
-The Noise-Masking and Delivery A/B pilots completed development evaluation; A/B ended with no promoted candidate. Next is **Noise grid v2: expanded baseline measurements and breakpoint analysis**, specified in [the v2 protocol](docs/NOISE_GRID_V2_PROTOCOL.md). The original grid branch was retired; v2 needs a new implementation. This plan makes no new selection of catalog engineering methods.
+The Noise-Masking and Delivery A/B pilots completed development evaluation; A/B
+ended with no promoted candidate. Next is **Noise grid v2: expanded baseline
+measurements and breakpoint analysis**, specified in
+[the v2 protocol](docs/NOISE_GRID_V2_PROTOCOL.md) and implemented on
+`codex/noise-grid-v2`. This plan makes no new selection of catalog engineering methods.
 
 See [HACKATHON_GUIDELINES.md](HACKATHON_GUIDELINES.md), [RIME_TELEPHONY_TESTING_GUIDE.md](RIME_TELEPHONY_TESTING_GUIDE.md), and [branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md). Each test branch's README links its executable notebook and detailed runbook; the [main README](README.md) lists those branches.
 
@@ -29,7 +33,12 @@ Output: `MyDrive/DataForge/delivery_ab/outputs/<run-id>/`.
 
 ## Boundaries and evidence status
 
-Noise grid v2 is the next planned experiment. It reuses baseline speech and adds noise recordings, a five-level SNR grid, bounded refinement and offset checks. Embedded codec/preflight validation and quality metrics remain part of the workflow. This decision adds no standalone continuity, latency, reconnection or live-routing work.
+Noise grid v2 is the next experiment. Its core reuses 14 cached critical-text
+speech realizations and adds four noise recordings at five SNR levels for 294
+scores. A GPU notebook produces resumable measurements; a separate CPU notebook
+validates the contract and computes breakpoint intervals. Midpoint and second-
+offset checks remain bounded follow-ups chosen only after the core report.
+Embedded codec/preflight validation and quality metrics remain part of the workflow.
 
 Pilot measurements are retained on the experiment branches; the completed A/B archive was audited at `4ddef62`. V2 has not run. Human review remains pending and original held-out measurements remain unexecuted. The simulated codec path does not establish live-phone performance or human comprehension.
 

@@ -8,7 +8,7 @@
 their notebook scripts, dependencies, tests and workflow-specific runbooks remain
 on their respective branches. `RIME_EVIDENCE.md` belongs to `noise-conditioned-ab`.
 
-The two test branches have no prefix; use the exact names below.
+Use the exact branch names below.
 For an existing Colab notebook, copy the latest cells from the matching branch.
 Before starting a new run, use a fresh runtime so Cell 2 clones the current branch
 and commit; existing checkouts are intentionally not updated automatically.
@@ -17,7 +17,12 @@ code revisions during a frozen run without checking producer/consumer compatibil
 
 ## Execution and evidence transfer
 
-The two original pilots completed development evaluation. Next is [Noise grid v2](NOISE_GRID_V2_PROTOCOL.md), with implementation planned on `codex/noise-grid-v2`. That branch and its new notebook are not yet created. It will verify and reuse the original clean baseline audio and frozen evaluator configuration while writing a separate run with versioned noise calibration. The original experiment branches remain available for reproducibility.
+The two original pilots completed development evaluation. Next is
+[Noise grid v2](NOISE_GRID_V2_PROTOCOL.md), implemented on
+`codex/noise-grid-v2` at `859085e`. Its producer verifies and reuses 14
+critical-text syntheses and the frozen evaluator configuration while writing a
+separate 294-score run with versioned noise calibration. Its second notebook
+analyzes that run on CPU. The original experiment branches remain available.
 
 Delivery A/B requires the complete Noise-Masking output and synthesis cache. It imports the frozen baseline without rerunning it.
 
@@ -25,6 +30,8 @@ Delivery A/B requires the complete Noise-Masking output and synthesis cache. It 
 | --- | --- | --- |
 | Noise-Masking Test | noise-masking-test | colab_noise_masking.py |
 | Noise-Conditioned Delivery A/B | noise-conditioned-ab | colab_noise_ab.py |
+| Noise Grid v2 producer | codex/noise-grid-v2 | colab_noise_masking.py |
+| Noise Grid v2 analysis | codex/noise-grid-v2 | colab_grid_analysis.py |
 
 Noise Masking produces the baseline. Delivery A/B
 copies the frozen baseline, scored rows, audio and synthesis cache into its own
@@ -47,4 +54,5 @@ not pool old noisy measurements with its new calibration.
 Persistent Drive folders under `MyDrive/DataForge/`:
 - `noise_masking/outputs/<run-id>/`: measured baseline and diagnostic exports.
 - `delivery_ab/outputs/<run-id>/`: copied baseline plus A/B and held-out evidence.
-- `noise_grid_v2/outputs/<run-id>/`: planned v2 measurements and analysis, separate from pilot results.
+- `noise_grid_v2/outputs/<run-id>/`: v2 measurements, separate from pilot results.
+- `grid_analysis_v2/outputs/<run-id>/<timestamp>/results/`: CPU breakpoint reports.
