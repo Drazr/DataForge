@@ -19,7 +19,7 @@ code revisions during a frozen run without checking producer/consumer compatibil
 
 The two original pilots completed development evaluation. Next is
 [Noise grid v2](NOISE_GRID_V2_PROTOCOL.md), implemented on
-`codex/noise-grid-v2` at `0474bb3`. Its producer verifies and reuses 14
+`noise-grid-v2` at `698fb0e`. Its producer verifies and reuses 14
 critical-text syntheses and the frozen evaluator configuration while writing a
 separate 294-score run with versioned noise calibration. Its second notebook
 analyzes that run on CPU. The original experiment branches remain available.
@@ -30,8 +30,8 @@ Delivery A/B requires the complete Noise-Masking output and synthesis cache. It 
 | --- | --- | --- |
 | Noise-Masking Test | noise-masking-test | colab_noise_masking.py |
 | Noise-Conditioned Delivery A/B | noise-conditioned-ab | colab_noise_ab.py |
-| Noise Grid v2 producer | codex/noise-grid-v2 | colab_noise_masking.py |
-| Noise Grid v2 analysis | codex/noise-grid-v2 | colab_grid_analysis.py |
+| Noise Grid v2 producer | noise-grid-v2 | colab_noise_masking.py |
+| Noise Grid v2 analysis | noise-grid-v2 | colab_grid_analysis.py |
 
 Noise Masking produces the baseline. Delivery A/B
 copies the frozen baseline, scored rows, audio and synthesis cache into its own

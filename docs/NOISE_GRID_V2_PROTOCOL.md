@@ -2,7 +2,7 @@
 
 Decision date: 2026-09-10. Status: **core implementation complete and locally
 validated; Colab execution pending**. The implementation is on
-`codex/noise-grid-v2` at commit `0474bb3`; the old retired grid notebook is
+`noise-grid-v2` at commit `698fb0e`; the old retired grid notebook is
 not the v2 workflow.
 
 ## Objective and prior evidence
@@ -185,7 +185,7 @@ and report their absence. The core result remains useful on its own.
 
 ## Implementation and handoff
 
-Implemented on `codex/noise-grid-v2` at `0474bb3`, based on the current
+Implemented on `noise-grid-v2` at `698fb0e`, based on the current
 Noise-Masking code and corrected scorer. The old analysis was adapted for Python
 3.13, the new source/window/calibration schema, DNSMOS support, complete-grid
 checks and text-clustered analysis. Local validation passed 62 tests. No old

@@ -6,7 +6,7 @@ The Noise-Masking and Delivery A/B pilots completed development evaluation; A/B
 ended with no promoted candidate. Next is **Noise grid v2: expanded baseline
 measurements and breakpoint analysis**, specified in
 [the v2 protocol](docs/NOISE_GRID_V2_PROTOCOL.md) and implemented on
-`codex/noise-grid-v2`. This plan makes no new selection of catalog engineering methods.
+`noise-grid-v2`. This plan makes no new selection of catalog engineering methods.
 
 See [HACKATHON_GUIDELINES.md](HACKATHON_GUIDELINES.md), [RIME_TELEPHONY_TESTING_GUIDE.md](RIME_TELEPHONY_TESTING_GUIDE.md), and [branch handoffs](https://github.com/Drazr/DataForge/blob/main/docs/BRANCH_HANDOFF.md). Each test branch's README links its executable notebook and detailed runbook; the [main README](README.md) lists those branches.
 
