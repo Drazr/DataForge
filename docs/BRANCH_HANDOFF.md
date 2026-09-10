@@ -1,52 +1,40 @@
-# Three independent workflow branches
+# Final product handoff
 
-## Current repository layout
+Build and submit from `final-product`. It starts at `product-foundation`
+commit `826a5df`, retaining the entire backend, frontend, dependency locks,
+environment example, and software/live test suites.
 
-`main` is the default branch. It owns `HACKATHON_GUIDELINES.md`,
-`rime_implementation_roadmap.md`, `RIME_TELEPHONY_TESTING_GUIDE.md` and this
-`docs/BRANCH_HANDOFF.md` guide. Test branches link to these shared documents;
-their notebook scripts, dependencies, tests and workflow-specific runbooks remain
-on their respective branches. `RIME_EVIDENCE.md` belongs to `noise-conditioned-ab`.
+The Grid v2 source, fixtures, settings, dependencies and regression tests were
+copied from `noise-grid-v2` commit `698fb0e`. The copied Colab entry points now
+clone `final-product` into separate directories. Scoring and analysis algorithms
+and acceptance settings are unchanged. Do not replace cells in the completed
+frozen Colab run or rerun its inference for this documentation task.
 
-The three test branches no longer have a prefix; use the exact names below.
-For an existing Colab notebook, copy the latest cells from the matching branch.
-Before starting a new run, use a fresh runtime so Cell 2 clones the current branch
-and commit; existing checkouts are intentionally not updated automatically.
-Preserve all Drive results, datasets, models and synthesis caches. Do not switch
-code revisions during a frozen run without checking producer/consumer compatibility.
+## Files to use
 
-## Execution and evidence transfer
+- `README.md`: setup, architecture, actual provider settings and current status.
+- `RIME_EVIDENCE.md`: focused experimental claim and limitations.
+- `evidence/noise-grid-v2/`: original pasted outputs and clearly labeled derived summary.
+- `docs/ENGINEERING_PLAN.md`: implementation order and integration points.
+- `docs/PRODUCT_EVIDENCE.md`: planned product acceptance procedure.
+- `docs/PRODUCT_DEMO.md`: four-to-five minute recording script.
+- `docs/SUBMISSION_CHECKLIST.md`: artifacts and remaining release work.
+- `docs/DEVELOPMENT_LOG.md`: ordered problems, countermeasures and reasons.
+- `docs/GRID_REPRODUCTION.md`: source provenance and exact analysis command.
 
-Active experiments only, in the chosen order: **Noise-Masking Test → Noise-Conditioned Delivery A/B → Grid and Breakpoint Analysis**. See the shared documents on `main`: the [roadmap](https://github.com/Drazr/DataForge/blob/main/rime_implementation_roadmap.md) and [testing guide](https://github.com/Drazr/DataForge/blob/main/RIME_TELEPHONY_TESTING_GUIDE.md). Catalog engineering methods are unchanged and outside this scope decision.
+## Remaining evidence transfer
 
-Delivery A/B requires only Noise-Masking outputs; leave its optional Grid input unset. Grid runs last and defaults to the Noise-Masking baseline. To analyze A/B outputs instead, select the completed Delivery A/B source run, `results.csv`, and one split/variant per session. Later Grid findings do not reopen the already frozen A/B candidate or permit tuning on held-out data.
+Only pasted Cells 6 and 7 are locally available. The original results folder is:
+`/content/drive/MyDrive/DataForge/grid_analysis_v2/outputs/05eca3e90a16aae6/20260910T095801572979Z/results`.
 
-| Workflow | Branch | Colab entry file |
-| --- | --- | --- |
-| Noise-Masking Test | noise-masking-test | colab_noise_masking.py |
-| Noise-Conditioned Delivery A/B | noise-conditioned-ab | colab_noise_ab.py |
-| Grid and Breakpoint Analysis | grid-breakpoint-analysis | colab_grid_analysis.py |
+Obtain the full folder, especially `REPORT.md`, `analysis_record.json`,
+`breakpoint_intervals.csv`, `selected_observations.csv` and `analysis_grid.csv`.
+Obtain the producer manifest/scope, hashes and selected clean/noisy audio for
+reproduction and the demo. Keep producer settings and raw metrics intact.
+The pasted table omits confidence-interval columns; no interval endpoints were
+invented in the derived summary.
 
-Noise Masking produces the baseline. Grid Analysis copies its tables, metadata
-and clips into its own checkout and performs CPU-only analysis. Delivery A/B
-copies the frozen baseline, scored rows, audio and synthesis cache into its own
-checkout, then evaluates interventions; it does not rerun the development baseline.
-Grid conclusions may also be copied into Delivery A/B for human challenge review.
-The two audio branches include identical shared scoring/audio utilities to preserve
-the producer configuration and evaluation hashes.
-
-Every consumer copies inputs under its branch checkout's `inputs/` folder.
-`handoff.json` records the originating run, file hashes and audio path mappings.
-Copies fail on conflicts rather than overwriting different evidence. Drive retains
-producer outputs, consumer outputs, large downloaded datasets and model snapshots.
-Download/model assets remain shared in Drive; they are not experimental outputs.
-
-There are no measured outputs to transfer yet. Consumer cells perform the copies
-once the producer finishes. Small copied evidence files can be committed to the
-consumer branch after review; raw audio/models remain ignored by Git. Nothing is
-automatically uploaded or mixed into another branch while an experiment runs.
-
-Persistent Drive folders under `MyDrive/DataForge/`:
-- `noise_masking/outputs/<run-id>/`: measured baseline and diagnostic exports.
-- `grid_analysis/outputs/<run-id>/<session>/results/`: grid conclusions and links.
-- `delivery_ab/outputs/<run-id>/`: copied baseline plus A/B and held-out evidence.
+All product building and submission documentation now lives on this branch.
+Raw experimental assets remain external until supplied. Earlier experimental
+branches remain historical records; their outcomes are not promoted into the
+final product evidence.

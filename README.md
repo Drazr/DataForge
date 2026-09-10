@@ -2,7 +2,23 @@
 
 A local browser voice product with a guided conversation, Rime speech, explicit confirmation, observable fallback behavior, and verified audio reuse. It uses synthetic appointments only: no real booking is created or changed.
 
-This is the `product-foundation` branch. The three unfinished experiment branches remain independent. Product behavior does not interpret their interim results or automatically adapt to noise. Shared [hackathon guidelines](HACKATHON_GUIDELINES.md), [experiment roadmap](rime_implementation_roadmap.md), [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md), and [handoff guide](docs/BRANCH_HANDOFF.md) remain available.
+This is the `final-product` branch, based on `product-foundation` commit
+`826a5df`. It retains the working voice foundation and adds the completed
+competing-speech grid evidence plus a focused build/submission plan.
+
+**Current status:** guided speech, repeat requests, caching and explicit
+confirmation exist. Competing-speech detection, risk-aware confirmation and
+critical-fact read-back remain to implement and validate. The study reported
+zero supported breakpoint crossings; 5 dB is only an observed aggregate risk
+region in two speech recordings. No universal threshold or mitigation benefit
+is claimed.
+
+Start with [engineering methods](docs/ENGINEERING_PLAN.md),
+[focused evidence](RIME_EVIDENCE.md), [submission checklist](docs/SUBMISSION_CHECKLIST.md),
+and [ordered development log](docs/DEVELOPMENT_LOG.md).
+The existing backend/frontend and their dependency locks are all in this branch.
+The original Colab outputs are archived; full machine-readable results and
+selected demo audio still need to be transferred.
 
 ## Run locally
 
@@ -36,8 +52,7 @@ Open http://127.0.0.1:3000 and select **Start voice session**. Allow microphone 
 No hosted deployment or SIP setup is required. The Python service owns the voice workers in the same process; run one Uvicorn process because session state is in memory. Sessions expire after 20 minutes. Up to four active sessions are accepted. Stop both terminal processes to end the local application.
 
 The selected catalog methods for this foundation are disclosed fallback handling
-and content-specific phrase/audio caching. Other catalog methods are outside this
-branch's product behavior.
+and content-specific phrase/audio caching. The proposed additions are specified in the engineering plan; automatic speech-risk detection is not yet part of runtime behavior.
 
 ## Conversation behavior
 
@@ -126,4 +141,4 @@ For unattended real voice verification, install Chromium first, configure creden
 
 This generates synthetic Rime caller WAV fixtures, starts/reuses the local services, injects fixture audio into a real browser microphone stream, runs the real VAD/STT/TTS path, and saves reports plus received audio under `evidence/`. It uses billed Rime/LiveKit calls. Missing credentials produce `unverified` and a nonzero exit, never a pass. If reusing services, the backend must have test mode enabled. Failure injection is disabled by default in ordinary use.
 
-See [product evidence and frozen acceptance procedures](docs/PRODUCT_EVIDENCE.md) and [demo script](docs/PRODUCT_DEMO.md). All measured product timing must be reported separately from the three research workflows. Human listening and the original experimental acceptance gates remain unchanged.
+See [product evidence and frozen acceptance procedures](docs/PRODUCT_EVIDENCE.md) and [demo script](docs/PRODUCT_DEMO.md). Report final-product measurements separately from offline grid metrics. The saved grid's acceptance criteria remain unchanged.

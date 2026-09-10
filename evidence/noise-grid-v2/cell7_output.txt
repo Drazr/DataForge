@@ -1,0 +1,866 @@
+ 
+  
+    
+
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+
+
+  
+    
+      
+      noise_id
+      noise_kind
+      higher_snr_db
+      lower_snr_db
+      higher_condition
+      lower_condition
+      metric
+      expected_pairs
+      matched_pairs
+      complete_grid_pair
+      ...
+      consistent_fraction
+      repeatable_deterioration
+      acceptance_limit
+      acceptance_status
+      crossing_texts
+      crossing_fraction
+      supported_breakpoint
+      measured_snr_higher_mean
+      measured_snr_lower_mean
+      measured_snr_non_decreasing_pairs
+    
+  
+  
+  
+
+0 rows × 29 columns
+
+    
+
+  
+    
+
+  
+    
+  
+    
+
+  
+    .colab-df-container {
+      display:flex;
+      gap: 12px;
+    }
+
+    .colab-df-convert {
+      background-color: #E8F0FE;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      fill: #1967D2;
+      height: 32px;
+      padding: 0 0 0 0;
+      width: 32px;
+    }
+
+    .colab-df-convert:hover {
+      background-color: #E2EBFA;
+      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+      fill: #174EA6;
+    }
+
+    .colab-df-buttons div {
+      margin-bottom: 4px;
+    }
+
+    [theme=dark] .colab-df-convert {
+      background-color: #3B4455;
+      fill: #D2E3FC;
+    }
+
+    [theme=dark] .colab-df-convert:hover {
+      background-color: #434B5C;
+      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+      fill: #FFFFFF;
+    }
+  
+
+    
+      const buttonEl =
+        document.querySelector('#df-5d9abb23-9e57-4b57-94cd-45cb11475784 button.colab-df-convert');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      async function convertToInteractive(key) {
+        const element = document.querySelector('#df-5d9abb23-9e57-4b57-94cd-45cb11475784');
+        const dataTable =
+          await google.colab.kernel.invokeFunction('convertToInteractive',
+                                                    [key], {});
+        if (!dataTable) return;
+
+        const docLinkHtml = 'Like what you see? Visit the ' +
+          '<a target="_blank" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'
+          + ' to learn more about interactive tables.';
+        element.innerHTML = '';
+        dataTable['output_type'] = 'display_data';
+        await google.colab.output.renderOutput(dataTable, element);
+        const docLink = document.createElement('div');
+        docLink.innerHTML = docLinkHtml;
+        element.appendChild(docLink);
+      }
+    
+  
+
+
+  
+    
+      .colab-df-generate {
+        background-color: #E8F0FE;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: none;
+        fill: #1967D2;
+        height: 32px;
+        padding: 0 0 0 0;
+        width: 32px;
+      }
+
+      .colab-df-generate:hover {
+        background-color: #E2EBFA;
+        box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+        fill: #174EA6;
+      }
+
+      [theme=dark] .colab-df-generate {
+        background-color: #3B4455;
+        fill: #D2E3FC;
+      }
+
+      [theme=dark] .colab-df-generate:hover {
+        background-color: #434B5C;
+        box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+        filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+        fill: #FFFFFF;
+      }
+    
+    
+
+  
+    
+  
+    
+    
+      (() => {
+      const buttonEl =
+        document.querySelector('#id_56f27a65-98a5-4960-8004-90e696e32afd button.colab-df-generate');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      buttonEl.onclick = () => {
+        google.colab.notebook.generateWithVariable('supported');
+      }
+      })();
+    
+  
+
+    
+  
+
+  
+    
+
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+
+
+  
+    
+      
+      noise_id
+      noise_kind
+      higher_snr_db
+      lower_snr_db
+      higher_condition
+      lower_condition
+      metric
+      expected_pairs
+      matched_pairs
+      complete_grid_pair
+      ...
+      consistent_fraction
+      repeatable_deterioration
+      acceptance_limit
+      acceptance_status
+      crossing_texts
+      crossing_fraction
+      supported_breakpoint
+      measured_snr_higher_mean
+      measured_snr_lower_mean
+      measured_snr_non_decreasing_pairs
+    
+  
+  
+    
+      2
+      speech_1
+      competing_speech
+      15
+      10
+      speech_1_15dB
+      speech_1_10dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      5
+      speech_1
+      competing_speech
+      10
+      5
+      speech_1_10dB
+      speech_1_5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      8
+      speech_1
+      competing_speech
+      5
+      0
+      speech_1_5dB
+      speech_1_0dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.000000e+00
+      -5.815349e-08
+      0
+    
+    
+      9
+      speech_1
+      competing_speech
+      0
+      -5
+      speech_1_0dB
+      speech_1_-5dB
+      wer
+      14
+      14
+      True
+      ...
+      0.714286
+      True
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      -5.815349e-08
+      -5.000000e+00
+      0
+    
+    
+      10
+      speech_1
+      competing_speech
+      0
+      -5
+      speech_1_0dB
+      speech_1_-5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.857143
+      True
+      0.9
+      already_unacceptable_at_higher_snr
+      0
+      0.000000
+      False
+      -5.815349e-08
+      -5.000000e+00
+      0
+    
+    
+      11
+      speech_1
+      competing_speech
+      0
+      -5
+      speech_1_0dB
+      speech_1_-5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      -5.815349e-08
+      -5.000000e+00
+      0
+    
+    
+      14
+      speech_2
+      competing_speech
+      15
+      10
+      speech_2_15dB
+      speech_2_10dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      17
+      speech_2
+      competing_speech
+      10
+      5
+      speech_2_10dB
+      speech_2_5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      18
+      speech_2
+      competing_speech
+      5
+      0
+      speech_2_5dB
+      speech_2_0dB
+      wer
+      14
+      14
+      True
+      ...
+      0.571429
+      True
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      5.000000e+00
+      5.940682e-08
+      0
+    
+    
+      20
+      speech_2
+      competing_speech
+      5
+      0
+      speech_2_5dB
+      speech_2_0dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.000000e+00
+      5.940682e-08
+      0
+    
+    
+      21
+      speech_2
+      competing_speech
+      0
+      -5
+      speech_2_0dB
+      speech_2_-5dB
+      wer
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      5.940682e-08
+      -5.000000e+00
+      0
+    
+    
+      22
+      speech_2
+      competing_speech
+      0
+      -5
+      speech_2_0dB
+      speech_2_-5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      0.9
+      already_unacceptable_at_higher_snr
+      1
+      0.142857
+      False
+      5.940682e-08
+      -5.000000e+00
+      0
+    
+    
+      23
+      speech_2
+      competing_speech
+      0
+      -5
+      speech_2_0dB
+      speech_2_-5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.940682e-08
+      -5.000000e+00
+      0
+    
+    
+      26
+      environment_1
+      environmental_noise
+      15
+      10
+      environment_1_15dB
+      environment_1_10dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      29
+      environment_1
+      environmental_noise
+      10
+      5
+      environment_1_10dB
+      environment_1_5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      32
+      environment_1
+      environmental_noise
+      5
+      0
+      environment_1_5dB
+      environment_1_0dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.000000e+00
+      1.113330e-07
+      0
+    
+    
+      35
+      environment_1
+      environmental_noise
+      0
+      -5
+      environment_1_0dB
+      environment_1_-5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.113330e-07
+      -5.000000e+00
+      0
+    
+    
+      38
+      environment_2
+      environmental_noise
+      15
+      10
+      environment_2_15dB
+      environment_2_10dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      41
+      environment_2
+      environmental_noise
+      10
+      5
+      environment_2_10dB
+      environment_2_5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      44
+      environment_2
+      environmental_noise
+      5
+      0
+      environment_2_5dB
+      environment_2_0dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.000000e+00
+      8.732542e-09
+      0
+    
+    
+      47
+      environment_2
+      environmental_noise
+      0
+      -5
+      environment_2_0dB
+      environment_2_-5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      8.732542e-09
+      -5.000000e+00
+      0
+    
+  
+
+21 rows × 29 columns
+
+    
+
+  
+    
+
+  
+    
+  
+    
+
+  
+    .colab-df-container {
+      display:flex;
+      gap: 12px;
+    }
+
+    .colab-df-convert {
+      background-color: #E8F0FE;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      fill: #1967D2;
+      height: 32px;
+      padding: 0 0 0 0;
+      width: 32px;
+    }
+
+    .colab-df-convert:hover {
+      background-color: #E2EBFA;
+      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+      fill: #174EA6;
+    }
+
+    .colab-df-buttons div {
+      margin-bottom: 4px;
+    }
+
+    [theme=dark] .colab-df-convert {
+      background-color: #3B4455;
+      fill: #D2E3FC;
+    }
+
+    [theme=dark] .colab-df-convert:hover {
+      background-color: #434B5C;
+      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+      fill: #FFFFFF;
+    }
+  
+
+    
+      const buttonEl =
+        document.querySelector('#df-85168e11-8b80-4ac9-a743-77b4df4f5a35 button.colab-df-convert');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      async function convertToInteractive(key) {
+        const element = document.querySelector('#df-85168e11-8b80-4ac9-a743-77b4df4f5a35');
+        const dataTable =
+          await google.colab.kernel.invokeFunction('convertToInteractive',
+                                                    [key], {});
+        if (!dataTable) return;
+
+        const docLinkHtml = 'Like what you see? Visit the ' +
+          '<a target="_blank" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'
+          + ' to learn more about interactive tables.';
+        element.innerHTML = '';
+        dataTable['output_type'] = 'display_data';
+        await google.colab.output.renderOutput(dataTable, element);
+        const docLink = document.createElement('div');
+        docLink.innerHTML = docLinkHtml;
+        element.appendChild(docLink);
+      }
+    
+  
+
+
+  
+    
+      .colab-df-generate {
+        background-color: #E8F0FE;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: none;
+        fill: #1967D2;
+        height: 32px;
+        padding: 0 0 0 0;
+        width: 32px;
+      }
+
+      .colab-df-generate:hover {
+        background-color: #E2EBFA;
+        box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+        fill: #174EA6;
+      }
+
+      [theme=dark] .colab-df-generate {
+        background-color: #3B4455;
+        fill: #D2E3FC;
+      }
+
+      [theme=dark] .colab-df-generate:hover {
+        background-color: #434B5C;
+        box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+        filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+        fill: #FFFFFF;
+      }
+    
+    
+
+  
+    
+  
+    
+    
+      (() => {
+      const buttonEl =
+        document.querySelector('#id_c21dc051-6d2a-40a9-9e1f-e2da73b5eaf7 button.colab-df-generate');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      buttonEl.onclick = () => {
+        google.colab.notebook.generateWithVariable('repeatable');
+      }
+      })();
+    
+  
+
+    
+  
+Persistent analysis: /content/drive/MyDrive/DataForge/grid_analysis_v2/outputs/05eca3e90a16aae6/20260910T095801572979Z/results
+Share REPORT.md, analysis_record.json and breakpoint_intervals.csv before planning any refinement or intervention.

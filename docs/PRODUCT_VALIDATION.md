@@ -1,40 +1,51 @@
-# Implementation validation
+# Final product validation
 
-Validation of the product foundation, independent of unfinished experiments:
+## Checks completed for this branch
 
 | Check | Result |
-|---|---|
-| Python controller, runtime, cache, Rime adapter, SDK, local API and evidence-status checks | 55 passed |
-| Browser setup failures, expired sessions, startup cancellation, mobile width and optional tool checks | 7 passed |
-| TypeScript check | Passed |
-| Frontend production build | Passed |
-| Live acceptance scenario discovery | 5 scenarios found (procedure v2) |
-| Rime public catalog | Coda / Astra / English present when checked |
-| Real credentialed voice verification | **Unverified: credentials missing** |
+| --- | --- |
+| Inherited product controller, runtime, cache, Rime adapter, SDK and API tests | 55 passed |
+| Copied Grid v2 producer/analysis regression suite | 64 passed; 12 subtests passed |
+| Focused evidence JSON parsing and row/result invariants | Passed |
+| Colab cell boundary/compile checks | Included in the passing Grid v2 suite |
+| TypeScript/frontend build | Inherited from product-foundation; not rerun after documentation-only frontend changes (there were none) |
+| Real credentialed final-product voice verification | Unverified |
+| Competing-speech detector and critical-fact read-back | Planned; not implemented or measured |
 
-The browser software checks substitute setup API responses intentionally. They
-do not simulate a successful call or supply voice-performance evidence. The
-optional WebMCP contract was checked through an injected registry; a native
-browser WebMCP registry was not independently verified.
+The product tests were run from `final-product` using the foundation environment.
+The grid tests were run from the same branch with the installed evaluator
+packages. That local evaluator environment emitted a SciPy warning because its
+NumPy version was newer than SciPy's declared range; all 64 tests completed.
+For reproduction, use the pinned `requirements-grid.txt` in a separate
+environment as documented.
 
-The Python suite reports two dependency deprecation warnings from the
-Starlette/httpx test client. The build reports a large client bundle warning
-from the voice UI dependencies. Neither prevented the corresponding checks.
+The copied experiment and analysis source matches the Grid v2 branch except for
+the Colab checkout branch/directory and the corresponding regression expectation.
+No metric algorithm, frozen acceptance setting or reported result was changed.
 
-Review fixes were checked on 8 September 2026. Regression coverage includes
-sequential playback, ignored overlapping replies, failed and concurrent worker
-cleanup, and interrupted evidence runs. Browser checks verify replacement of expired
-sessions and cancellation during both worker creation and audio connection.
+## Existing product verification inherited from product-foundation
 
-The follow-up review verified that finalized SDK input timestamps preserve the
-confirmation gate for fresh, early and missing-onset replies. Live procedure v2
-now waits for completed acknowledgment/fallback playback, checks a successful
-sequential repeat, and explicitly labels injected connection failures. The
-revised live scenarios pass discovery and TypeScript checks; their provider
-behavior remains unverified without credentials.
+At `product-foundation@826a5df`, seven browser software checks, TypeScript
+checking, a production frontend build and discovery of five live scenarios were
+reported as passing. Those checks used mocked setup/error responses where
+documented and do not establish successful voice behavior. The public Rime
+catalog contained Coda/Astra/English when checked; each final live session must
+repeat preflight.
 
-The live command generated an ignored local `evidence/live-status.json` with
-`status: unverified` and the missing credential names. No API key values,
-measured voice timings, experiment conclusions or paid-provider success are
-included in this validation record. Run the procedure in PRODUCT_EVIDENCE.md
-after configuring credentials before recording a final demonstration.
+The credentialed end-to-end suite has not been supplied as passing. No live
+latency, detector accuracy, human comprehension, speaker identity or mitigation
+improvement is claimed. The proposed detector/read-back extension requires the
+new procedure in PRODUCT_EVIDENCE.md.
+
+## Evidence validation
+
+The Cell 6 and Cell 7 pastes hash to the values in
+`evidence/noise-grid-v2/provenance.json`. Derived JSON records 294 observations,
+zero missing rows and zero supported crossings. Full result exports and referenced
+audio are still missing. The displayed dataframe hides confidence fields, so this
+branch records no numeric confidence bounds.
+
+Before submission, run the exact final product with configured Rime/LiveKit
+credentials, preserve received audio and redacted events, and record measured
+normal/stress results. A software regression pass and an offline ASR-proxy grid
+do not replace this product verification.

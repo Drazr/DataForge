@@ -19,5 +19,7 @@ models/
 .branch-workspaces/
 node_modules/
 .product-cache/
-evidence/
+evidence/*
+!evidence/noise-grid-v2/
+!evidence/noise-grid-v2/**
 test-results/

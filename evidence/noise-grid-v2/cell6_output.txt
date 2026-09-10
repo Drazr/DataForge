@@ -1,0 +1,1755 @@
+ 
+  
+    
+
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+
+
+  
+    
+      
+      condition
+      noise_id
+      snr_db
+      clips
+      texts
+      critical_clips
+      wer
+      fact_recovery
+      estoi
+      dnsmos_ovrl
+      measured_snr_db_mean
+      measured_snr_db_min
+      measured_snr_db_max
+    
+  
+  
+    
+      0
+      clean
+      clean
+      NaN
+      14
+      7
+      14
+      0.304835
+      0.948980
+      NaN
+      3.050540
+      NaN
+      NaN
+      NaN
+    
+    
+      1
+      environment_1_-5dB
+      environment_1
+      -5.0
+      14
+      7
+      14
+      0.347636
+      0.877551
+      0.521471
+      1.827385
+      -5.000000e+00
+      -5.000000e+00
+      -5.000000e+00
+    
+    
+      2
+      environment_1_0dB
+      environment_1
+      0.0
+      14
+      7
+      14
+      0.311068
+      0.928571
+      0.602370
+      2.143695
+      1.113330e-07
+      -4.755611e-07
+      4.369287e-07
+    
+    
+      3
+      environment_1_10dB
+      environment_1
+      10.0
+      14
+      7
+      14
+      0.309030
+      0.969388
+      0.750603
+      2.460475
+      1.000000e+01
+      1.000000e+01
+      1.000000e+01
+    
+    
+      4
+      environment_1_15dB
+      environment_1
+      15.0
+      14
+      7
+      14
+      0.300811
+      0.959184
+      0.814869
+      2.658567
+      1.500000e+01
+      1.500000e+01
+      1.500000e+01
+    
+    
+      5
+      environment_1_5dB
+      environment_1
+      5.0
+      14
+      7
+      14
+      0.308917
+      0.959184
+      0.678866
+      2.289288
+      5.000000e+00
+      5.000000e+00
+      5.000000e+00
+    
+    
+      6
+      environment_2_-5dB
+      environment_2
+      -5.0
+      14
+      7
+      14
+      0.320661
+      0.938776
+      0.597439
+      1.644869
+      -5.000000e+00
+      -5.000000e+00
+      -5.000000e+00
+    
+    
+      7
+      environment_2_0dB
+      environment_2
+      0.0
+      14
+      7
+      14
+      0.327004
+      0.928571
+      0.696717
+      2.494569
+      8.732542e-09
+      -2.426711e-07
+      2.293292e-07
+    
+    
+      8
+      environment_2_10dB
+      environment_2
+      10.0
+      14
+      7
+      14
+      0.312778
+      0.969388
+      0.838207
+      2.683254
+      1.000000e+01
+      1.000000e+01
+      1.000000e+01
+    
+    
+      9
+      environment_2_15dB
+      environment_2
+      15.0
+      14
+      7
+      14
+      0.315040
+      0.969388
+      0.884314
+      2.761938
+      1.500000e+01
+      1.500000e+01
+      1.500000e+01
+    
+    
+      10
+      environment_2_5dB
+      environment_2
+      5.0
+      14
+      7
+      14
+      0.314709
+      0.959184
+      0.776801
+      2.644421
+      5.000000e+00
+      5.000000e+00
+      5.000000e+00
+    
+    
+      11
+      speech_1_-5dB
+      speech_1
+      -5.0
+      14
+      7
+      14
+      0.491628
+      0.602041
+      0.430705
+      2.434310
+      -5.000000e+00
+      -5.000000e+00
+      -5.000000e+00
+    
+    
+      12
+      speech_1_0dB
+      speech_1
+      0.0
+      14
+      7
+      14
+      0.379338
+      0.836735
+      0.537493
+      2.410561
+      -5.815349e-08
+      -3.783480e-07
+      3.483949e-07
+    
+    
+      13
+      speech_1_10dB
+      speech_1
+      10.0
+      14
+      7
+      14
+      0.320828
+      0.948980
+      0.744321
+      2.617493
+      1.000000e+01
+      1.000000e+01
+      1.000000e+01
+    
+    
+      14
+      speech_1_15dB
+      speech_1
+      15.0
+      14
+      7
+      14
+      0.318674
+      0.948980
+      0.827022
+      2.700994
+      1.500000e+01
+      1.500000e+01
+      1.500000e+01
+    
+    
+      15
+      speech_1_5dB
+      speech_1
+      5.0
+      14
+      7
+      14
+      0.345044
+      0.857143
+      0.645213
+      2.486661
+      5.000000e+00
+      5.000000e+00
+      5.000000e+00
+    
+    
+      16
+      speech_2_-5dB
+      speech_2
+      -5.0
+      14
+      7
+      14
+      0.846196
+      0.173469
+      0.528701
+      2.844873
+      -5.000000e+00
+      -5.000000e+00
+      -5.000000e+00
+    
+    
+      17
+      speech_2_0dB
+      speech_2
+      0.0
+      14
+      7
+      14
+      0.463149
+      0.744898
+      0.608120
+      2.798541
+      5.940682e-08
+      -3.320769e-07
+      3.378838e-07
+    
+    
+      18
+      speech_2_10dB
+      speech_2
+      10.0
+      14
+      7
+      14
+      0.323203
+      0.948980
+      0.763531
+      2.851438
+      1.000000e+01
+      1.000000e+01
+      1.000000e+01
+    
+    
+      19
+      speech_2_15dB
+      speech_2
+      15.0
+      14
+      7
+      14
+      0.327171
+      0.959184
+      0.828174
+      2.913441
+      1.500000e+01
+      1.500000e+01
+      1.500000e+01
+    
+    
+      20
+      speech_2_5dB
+      speech_2
+      5.0
+      14
+      7
+      14
+      0.370828
+      0.887755
+      0.688937
+      2.829661
+      5.000000e+00
+      5.000000e+00
+      5.000000e+00
+    
+  
+
+
+    
+
+  
+    
+
+  
+    
+  
+    
+
+  
+    .colab-df-container {
+      display:flex;
+      gap: 12px;
+    }
+
+    .colab-df-convert {
+      background-color: #E8F0FE;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      fill: #1967D2;
+      height: 32px;
+      padding: 0 0 0 0;
+      width: 32px;
+    }
+
+    .colab-df-convert:hover {
+      background-color: #E2EBFA;
+      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+      fill: #174EA6;
+    }
+
+    .colab-df-buttons div {
+      margin-bottom: 4px;
+    }
+
+    [theme=dark] .colab-df-convert {
+      background-color: #3B4455;
+      fill: #D2E3FC;
+    }
+
+    [theme=dark] .colab-df-convert:hover {
+      background-color: #434B5C;
+      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+      fill: #FFFFFF;
+    }
+  
+
+    
+      const buttonEl =
+        document.querySelector('#df-1254f8be-160f-4dc3-a3e7-5207e02db802 button.colab-df-convert');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      async function convertToInteractive(key) {
+        const element = document.querySelector('#df-1254f8be-160f-4dc3-a3e7-5207e02db802');
+        const dataTable =
+          await google.colab.kernel.invokeFunction('convertToInteractive',
+                                                    [key], {});
+        if (!dataTable) return;
+
+        const docLinkHtml = 'Like what you see? Visit the ' +
+          '<a target="_blank" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'
+          + ' to learn more about interactive tables.';
+        element.innerHTML = '';
+        dataTable['output_type'] = 'display_data';
+        await google.colab.output.renderOutput(dataTable, element);
+        const docLink = document.createElement('div');
+        docLink.innerHTML = docLinkHtml;
+        element.appendChild(docLink);
+      }
+    
+  
+
+
+    
+  
+
+  
+    
+
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+
+
+  
+    
+      
+      noise_id
+      noise_kind
+      higher_snr_db
+      lower_snr_db
+      higher_condition
+      lower_condition
+      metric
+      expected_pairs
+      matched_pairs
+      complete_grid_pair
+      ...
+      consistent_fraction
+      repeatable_deterioration
+      acceptance_limit
+      acceptance_status
+      crossing_texts
+      crossing_fraction
+      supported_breakpoint
+      measured_snr_higher_mean
+      measured_snr_lower_mean
+      measured_snr_non_decreasing_pairs
+    
+  
+  
+    
+      0
+      speech_1
+      competing_speech
+      15
+      10
+      speech_1_15dB
+      speech_1_10dB
+      wer
+      14
+      14
+      True
+      ...
+      0.142857
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      1
+      speech_1
+      competing_speech
+      15
+      10
+      speech_1_15dB
+      speech_1_10dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      both_acceptable
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      2
+      speech_1
+      competing_speech
+      15
+      10
+      speech_1_15dB
+      speech_1_10dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      3
+      speech_1
+      competing_speech
+      10
+      5
+      speech_1_10dB
+      speech_1_5dB
+      wer
+      14
+      14
+      True
+      ...
+      0.428571
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      4
+      speech_1
+      competing_speech
+      10
+      5
+      speech_1_10dB
+      speech_1_5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.285714
+      False
+      0.9
+      crosses_limit
+      2
+      0.285714
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      5
+      speech_1
+      competing_speech
+      10
+      5
+      speech_1_10dB
+      speech_1_5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      6
+      speech_1
+      competing_speech
+      5
+      0
+      speech_1_5dB
+      speech_1_0dB
+      wer
+      14
+      14
+      True
+      ...
+      0.142857
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      5.000000e+00
+      -5.815349e-08
+      0
+    
+    
+      7
+      speech_1
+      competing_speech
+      5
+      0
+      speech_1_5dB
+      speech_1_0dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      already_unacceptable_at_higher_snr
+      0
+      0.000000
+      False
+      5.000000e+00
+      -5.815349e-08
+      0
+    
+    
+      8
+      speech_1
+      competing_speech
+      5
+      0
+      speech_1_5dB
+      speech_1_0dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.000000e+00
+      -5.815349e-08
+      0
+    
+    
+      9
+      speech_1
+      competing_speech
+      0
+      -5
+      speech_1_0dB
+      speech_1_-5dB
+      wer
+      14
+      14
+      True
+      ...
+      0.714286
+      True
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      -5.815349e-08
+      -5.000000e+00
+      0
+    
+    
+      10
+      speech_1
+      competing_speech
+      0
+      -5
+      speech_1_0dB
+      speech_1_-5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.857143
+      True
+      0.9
+      already_unacceptable_at_higher_snr
+      0
+      0.000000
+      False
+      -5.815349e-08
+      -5.000000e+00
+      0
+    
+    
+      11
+      speech_1
+      competing_speech
+      0
+      -5
+      speech_1_0dB
+      speech_1_-5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      -5.815349e-08
+      -5.000000e+00
+      0
+    
+    
+      12
+      speech_2
+      competing_speech
+      15
+      10
+      speech_2_15dB
+      speech_2_10dB
+      wer
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      13
+      speech_2
+      competing_speech
+      15
+      10
+      speech_2_15dB
+      speech_2_10dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      both_acceptable
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      14
+      speech_2
+      competing_speech
+      15
+      10
+      speech_2_15dB
+      speech_2_10dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      15
+      speech_2
+      competing_speech
+      10
+      5
+      speech_2_10dB
+      speech_2_5dB
+      wer
+      14
+      14
+      True
+      ...
+      0.285714
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      16
+      speech_2
+      competing_speech
+      10
+      5
+      speech_2_10dB
+      speech_2_5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.285714
+      False
+      0.9
+      crosses_limit
+      1
+      0.142857
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      17
+      speech_2
+      competing_speech
+      10
+      5
+      speech_2_10dB
+      speech_2_5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      18
+      speech_2
+      competing_speech
+      5
+      0
+      speech_2_5dB
+      speech_2_0dB
+      wer
+      14
+      14
+      True
+      ...
+      0.571429
+      True
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      5.000000e+00
+      5.940682e-08
+      0
+    
+    
+      19
+      speech_2
+      competing_speech
+      5
+      0
+      speech_2_5dB
+      speech_2_0dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.285714
+      False
+      0.9
+      already_unacceptable_at_higher_snr
+      0
+      0.000000
+      False
+      5.000000e+00
+      5.940682e-08
+      0
+    
+    
+      20
+      speech_2
+      competing_speech
+      5
+      0
+      speech_2_5dB
+      speech_2_0dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.000000e+00
+      5.940682e-08
+      0
+    
+    
+      21
+      speech_2
+      competing_speech
+      0
+      -5
+      speech_2_0dB
+      speech_2_-5dB
+      wer
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      5.940682e-08
+      -5.000000e+00
+      0
+    
+    
+      22
+      speech_2
+      competing_speech
+      0
+      -5
+      speech_2_0dB
+      speech_2_-5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      0.9
+      already_unacceptable_at_higher_snr
+      1
+      0.142857
+      False
+      5.940682e-08
+      -5.000000e+00
+      0
+    
+    
+      23
+      speech_2
+      competing_speech
+      0
+      -5
+      speech_2_0dB
+      speech_2_-5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.940682e-08
+      -5.000000e+00
+      0
+    
+    
+      24
+      environment_1
+      environmental_noise
+      15
+      10
+      environment_1_15dB
+      environment_1_10dB
+      wer
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      25
+      environment_1
+      environmental_noise
+      15
+      10
+      environment_1_15dB
+      environment_1_10dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      both_acceptable
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      26
+      environment_1
+      environmental_noise
+      15
+      10
+      environment_1_15dB
+      environment_1_10dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      27
+      environment_1
+      environmental_noise
+      10
+      5
+      environment_1_10dB
+      environment_1_5dB
+      wer
+      14
+      14
+      True
+      ...
+      0.142857
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      28
+      environment_1
+      environmental_noise
+      10
+      5
+      environment_1_10dB
+      environment_1_5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      both_acceptable
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      29
+      environment_1
+      environmental_noise
+      10
+      5
+      environment_1_10dB
+      environment_1_5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      30
+      environment_1
+      environmental_noise
+      5
+      0
+      environment_1_5dB
+      environment_1_0dB
+      wer
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      5.000000e+00
+      1.113330e-07
+      0
+    
+    
+      31
+      environment_1
+      environmental_noise
+      5
+      0
+      environment_1_5dB
+      environment_1_0dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.142857
+      False
+      0.9
+      both_acceptable
+      1
+      0.142857
+      False
+      5.000000e+00
+      1.113330e-07
+      0
+    
+    
+      32
+      environment_1
+      environmental_noise
+      5
+      0
+      environment_1_5dB
+      environment_1_0dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.000000e+00
+      1.113330e-07
+      0
+    
+    
+      33
+      environment_1
+      environmental_noise
+      0
+      -5
+      environment_1_0dB
+      environment_1_-5dB
+      wer
+      14
+      14
+      True
+      ...
+      0.285714
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.113330e-07
+      -5.000000e+00
+      0
+    
+    
+      34
+      environment_1
+      environmental_noise
+      0
+      -5
+      environment_1_0dB
+      environment_1_-5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.142857
+      False
+      0.9
+      crosses_limit
+      0
+      0.000000
+      False
+      1.113330e-07
+      -5.000000e+00
+      0
+    
+    
+      35
+      environment_1
+      environmental_noise
+      0
+      -5
+      environment_1_0dB
+      environment_1_-5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.113330e-07
+      -5.000000e+00
+      0
+    
+    
+      36
+      environment_2
+      environmental_noise
+      15
+      10
+      environment_2_15dB
+      environment_2_10dB
+      wer
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      37
+      environment_2
+      environmental_noise
+      15
+      10
+      environment_2_15dB
+      environment_2_10dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      both_acceptable
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      38
+      environment_2
+      environmental_noise
+      15
+      10
+      environment_2_15dB
+      environment_2_10dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.500000e+01
+      1.000000e+01
+      0
+    
+    
+      39
+      environment_2
+      environmental_noise
+      10
+      5
+      environment_2_10dB
+      environment_2_5dB
+      wer
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      40
+      environment_2
+      environmental_noise
+      10
+      5
+      environment_2_10dB
+      environment_2_5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      both_acceptable
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      41
+      environment_2
+      environmental_noise
+      10
+      5
+      environment_2_10dB
+      environment_2_5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      1.000000e+01
+      5.000000e+00
+      0
+    
+    
+      42
+      environment_2
+      environmental_noise
+      5
+      0
+      environment_2_5dB
+      environment_2_0dB
+      wer
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      5.000000e+00
+      8.732542e-09
+      0
+    
+    
+      43
+      environment_2
+      environmental_noise
+      5
+      0
+      environment_2_5dB
+      environment_2_0dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      both_acceptable
+      0
+      0.000000
+      False
+      5.000000e+00
+      8.732542e-09
+      0
+    
+    
+      44
+      environment_2
+      environmental_noise
+      5
+      0
+      environment_2_5dB
+      environment_2_0dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      5.000000e+00
+      8.732542e-09
+      0
+    
+    
+      45
+      environment_2
+      environmental_noise
+      0
+      -5
+      environment_2_0dB
+      environment_2_-5dB
+      wer
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      NaN
+      limits_not_set
+      0
+      0.000000
+      False
+      8.732542e-09
+      -5.000000e+00
+      0
+    
+    
+      46
+      environment_2
+      environmental_noise
+      0
+      -5
+      environment_2_0dB
+      environment_2_-5dB
+      fact_recovery
+      14
+      14
+      True
+      ...
+      0.000000
+      False
+      0.9
+      both_acceptable
+      0
+      0.000000
+      False
+      8.732542e-09
+      -5.000000e+00
+      0
+    
+    
+      47
+      environment_2
+      environmental_noise
+      0
+      -5
+      environment_2_0dB
+      environment_2_-5dB
+      estoi
+      14
+      14
+      True
+      ...
+      1.000000
+      True
+      NaN
+      supporting_metric
+      0
+      0.000000
+      False
+      8.732542e-09
+      -5.000000e+00
+      0
+    
+  
+
+48 rows × 29 columns
+
+    
+
+  
+    
+
+  
+    
+  
+    
+
+  
+    .colab-df-container {
+      display:flex;
+      gap: 12px;
+    }
+
+    .colab-df-convert {
+      background-color: #E8F0FE;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      fill: #1967D2;
+      height: 32px;
+      padding: 0 0 0 0;
+      width: 32px;
+    }
+
+    .colab-df-convert:hover {
+      background-color: #E2EBFA;
+      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+      fill: #174EA6;
+    }
+
+    .colab-df-buttons div {
+      margin-bottom: 4px;
+    }
+
+    [theme=dark] .colab-df-convert {
+      background-color: #3B4455;
+      fill: #D2E3FC;
+    }
+
+    [theme=dark] .colab-df-convert:hover {
+      background-color: #434B5C;
+      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+      fill: #FFFFFF;
+    }
+  
+
+    
+      const buttonEl =
+        document.querySelector('#df-35068e0a-0421-4b2b-8d0c-48d5b3213162 button.colab-df-convert');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      async function convertToInteractive(key) {
+        const element = document.querySelector('#df-35068e0a-0421-4b2b-8d0c-48d5b3213162');
+        const dataTable =
+          await google.colab.kernel.invokeFunction('convertToInteractive',
+                                                    [key], {});
+        if (!dataTable) return;
+
+        const docLinkHtml = 'Like what you see? Visit the ' +
+          '<a target="_blank" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'
+          + ' to learn more about interactive tables.';
+        element.innerHTML = '';
+        dataTable['output_type'] = 'display_data';
+        await google.colab.output.renderOutput(dataTable, element);
+        const docLink = document.createElement('div');
+        docLink.innerHTML = docLinkHtml;
+        element.appendChild(docLink);
+      }
+    
+  
+
+
+    
+  
+# Grid and breakpoint analysis
+
+Only metrics with configured acceptance limits can identify unacceptable performance.
+
+Selected 294 rows; 0 expected rows missing.
+Performance grid: baseline_condition_summary.csv. Scope: evidence_scope.json.
+Supported metric/interval crossings: 0.
+Development challenge rows: 82.
+
+See breakpoint_intervals.csv for matched counts, nominal/measured SNR, recurrence, and uncertainty.
+No supported interval means the present grid supplies insufficient crossing evidence; it does not prove all conditions acceptable.
+Challenge rows are candidates for the separate A/B workflow; no challenge.json was written.
+
+- Pilot evidence; no universal threshold or classifier
+- WER and fact recovery are ASR proxies, not measured human comprehension
+- SNR intervals use nominal calibration; inspect measured SNR differences
+- Bootstrap resamples texts, not repeats; small-sample intervals are exploratory
+- No multiplicity correction; recurrence settings are pilot choices, not statistical guarantees
+- DNSMOS is supporting quality evidence and does not define a breakpoint
+

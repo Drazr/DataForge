@@ -1,89 +1,66 @@
-# Product evidence — separate from experimental results
+# Product evidence: competing speech and critical facts
 
-## Status
+The submission evidence entry point is [RIME_EVIDENCE.md](../RIME_EVIDENCE.md).
+The only imported experimental results in this branch concern the completed
+Noise Grid v2 and its paired analysis.
 
-The product foundation implements guided voice control and its offline checks.
-The credentialed end-to-end voice suite has **not been run successfully** in this
-checkout: RIME_API_KEY, LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET were
-not configured during implementation. No live latency, intelligibility,
-comprehension, telephone performance, or robustness improvement is claimed.
+## Current status
 
-The public Rime catalog was checked during implementation and contained the
-configured `coda` / `astra` / `eng` combination. Each new live session repeats
-catalog validation; this is not equivalent to successfully synthesizing speech.
+The inherited foundation provides guided Rime speech, sequential playback,
+requested-detail replay, explicit confirmation, verified audio caching, and
+visible recovery. Its offline tests are software verification. A successful
+credentialed voice run has not been supplied for this final product.
 
-## Engineering claim to verify
+Competing-speech detection, risk-aware confirmation and fact read-back are
+planned extensions in [ENGINEERING_PLAN.md](ENGINEERING_PLAN.md). They have no
+measured accuracy or mitigation benefit yet. Existing VAD detects speech activity;
+it is not a multi-speaker detector. The existing generic affirmative gate does
+not verify that a particular person heard each fact correctly.
 
-DataForge remains unconfirmed through provider and connection failures, and
-confirms only after complete delivery of the required details and question
-followed by a fresh explicit affirmative utterance. Its interpretation
-contract can later accept an LLM without transferring state-changing authority.
+## Evidence boundary
 
-The claim concerns software state and observed audio behavior. A recognized
-"yes" can still be wrong because of ASR, another speaker, or misunderstanding.
-The product does not prove listener comprehension or speaker identity.
+The grid used seven development texts, two syntheses, four noise recordings and
+five SNR levels plus clean: 294 scored observations. The analysis reported zero
+supported breakpoint crossings. Repeatable deterioration occurred for both
+competing-speech recordings between 0 and -5 dB.
 
-## Frozen acceptance procedure v2
+A product may use these failures to motivate a design. It may not claim that
+5 dB is a validated runtime trigger, that a local microphone measures the
+listener's SNR, or that confirmation has already solved the masking problem.
+The live product uses WebRTC/Opus; the study's frozen audio/evaluator pipeline
+must be described separately. No held-out or human-comprehension claim is made.
 
-Version 2 reflects the reduced foundation scope: sequential replies, caching,
-and disclosed fallback. It replaces the previous procedure before any successful
-credentialed measurements have been collected.
+## Planned acceptance procedure: speech-and-facts-v1
 
-1. Run the offline tests and browser error-path checks; all must pass.
-2. Run preflight using the exact final model, speaker, endpoint and transport.
-3. Run the normal scenario with cache bypass, then with cache reuse. Required
-   details and question must complete; no confirmation occurs before the fresh
-   synthetic affirmative reply. Exactly one confirmation event follows. Received
-   audio must have non-silent samples. The spoken acknowledgment must complete
-   before evidence capture. Cache provenance must match each mode.
-4. After the confirmation question, inject the spoken "repeat the time"
-   fixture. Require the requested fact and a new confirmation question while
-   the appointment remains unconfirmed.
-5. Inject a provider failure on the next synthesis, including cache-hit paths.
-   Require a recovery state, no confirmation, and the cached Rime disclosure.
-   Explicit recovery must play a fresh confirmation question.
-6. Inject a connection-failure action through the browser control API and
-   require recovery with confirmation eligibility cleared. This verifies the
-   failure-handling policy; it does not simulate a network outage or measure
-   transport failure detection.
+Freeze the implementation, detector/version/settings, fixture identities and
+acceptance criteria before collecting product results. Never overwrite the
+original grid or lower its recurrence criteria.
 
-Scenarios live in `web/tests-live`. Run from the product root:
+1. Run the inherited offline suite and preflight using the exact final provider
+   configuration. Record commit, catalog hash, browser, transport and settings.
+2. Verify the normal live flow: Rime speaks the authoritative synthetic facts;
+   playback completes; a fresh intended reply confirms exactly once.
+3. Once implemented, verify the fact read-back extension: a wrong, partial or
+   contradictory code/time leaves the session unconfirmed. Replay the named
+   authoritative detail and require a new response. No guessed slot is accepted.
+4. Once implemented, use labeled clean, environmental-noise, single-speaker and
+   competing-speaker incoming clips to evaluate the actual detector. Report
+   false alarms, missed cases and unknown outputs. VAD or a generic ASR
+   confidence value alone is not ground truth for competing speech.
+5. Verify that suspected/unknown speech input cannot authorize confirmation
+   until the designed recovery/read-back path is completed. Manually injected
+   risk events verify controller behavior only; label them as injections.
+6. Run paired baseline and mitigation sessions on the same frozen stress
+   fixtures, with target facts and intended speaker annotated. Report incorrect
+   confirmations, successful fact checks and unresolved sessions with counts.
+   Withhold any improvement claim until measured. Retrying or failing to confirm
+   must not be counted as comprehension success.
 
-```powershell
-.venv/Scripts/python.exe -m product.cli live
-```
+Keep cached and uncached observations separate. Export received audio alongside
+events; sender completion alone is insufficient. Existing failure scenarios in
+the inherited live suite remain available as regression checks, but do not
+test the new detector or fact read-back.
 
-The suite records event JSON and received WebM audio under `evidence/live`,
-caller fixtures under `evidence/caller-fixtures`, Playwright JSON results, and
-an overall `evidence/live-status.json`. It uses real billed providers once
-credentials are configured. Browser-generated microphone input and synthetic
-caller speech do not substitute for human listening review.
-
-Each live command replaces the overall status with `running` before preflight,
-and records a unique run ID, stage and timestamps. Failed fixture generation,
-browser-launch failures and interrupted runs cannot leave an earlier `passed`
-status in place. Missing credentials produce `unverified`; a force-killed run
-may remain `running`, which is not a successful verification. Existing audio
-and event files are not evidence of a new successful run by themselves.
-
-## Evidence integrity and limitations
-
-- Preserve procedure v2 when recording the first measurements. Changes to the
-  scenarios require a new version and explanation, never retroactive
-  relabeling of a failed run.
-- Include Git commit, dependency locks, provider configuration, catalog hash,
-  configured LiveKit project endpoint and actual region when available in the
-  final evidence package. Transport is browser WebRTC/Opus, not PCMU telephony.
-- Preserve raw received audio alongside events. Sender-side completion is a
-  useful control signal, but not proof of audible output at the listener.
-- Rime synthesis buffers the complete segment. Cached versus uncached latency
-  is separate; no independent repeat is silently replaced in the experiments.
-- LiveKit or browser acoustic processing may affect input. Record the browser
-  and settings when reproducing; do not compare these observations directly
-  against frozen simulated-noise metrics.
-- No research result is imported automatically, and no listening-SNR threshold
-  or adaptive intervention is inferred. Later validated delivery profiles need
-  their own linked evidence and final-product checks.
-
-The Delivery A/B branch owns the experimental `RIME_EVIDENCE.md`. This document
-adds product evidence without changing that experiment's claims or gates.
+Run the existing foundation suite with `python -m product.cli live` only after
+credentials and services are configured. It uses billed providers and does not
+implement the six-step extension procedure above.

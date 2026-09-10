@@ -13,7 +13,7 @@
 
 - **Working repository:** judges may ask for reproduction.
 - **README:** setup, architecture, third parties, known limitations, failure behavior, and exact Rime model ID, speaker, language, endpoint, format and transport.
-- **[RIME_EVIDENCE.md on noise-conditioned-ab](https://github.com/Drazr/DataForge/blob/noise-conditioned-ab/RIME_EVIDENCE.md):** hard voice claim, acceptance test, exact procedure, results, saved clips/fixtures, limitations and a repeatable command.
+- **[RIME_EVIDENCE.md](RIME_EVIDENCE.md):** hard voice claim, acceptance test, exact procedure, results, saved clips/fixtures, limitations and a repeatable command.
 - **4–5 minute demo:** user need, normal flow, deliberate stress/failure case, measured result, and active Rime provider.
 - **Environment example:** placeholders only; it must pass secret/config preflight.
 
@@ -39,15 +39,19 @@
 
 ## Project scope
 
-The selected path is **Telephony and adverse audio conditions**. The active experimental scope is limited to these three workflows, in this execution order:
+The final product is a browser voice appointment-confirmation flow built on the
+existing product foundation. The engineering direction is suspected competing
+speech and critical-fact confirmation, with implementation status tracked in
+[the plan](docs/ENGINEERING_PLAN.md).
 
-1. **Noise-Masking Test**.
-2. **Noise-Conditioned Delivery A/B**.
-3. **Grid and Breakpoint Analysis**.
+The submission's experimental evidence is the completed 294-score Noise Grid v2.
+It supports repeatable deterioration in competing speech but reports zero
+supported breakpoint crossings. Five dB is descriptive of these recordings,
+not a validated detector threshold. No automatic detector or read-back benefit
+has been measured yet.
 
-The [implementation roadmap](rime_implementation_roadmap.md) and [testing guide](RIME_TELEPHONY_TESTING_GUIDE.md) define this plan; this file remains the submission and compliance reference. Standalone telephone-format, DNSMOS cross-check and streaming-continuity experiments are not part of the selected test plan. Necessary codec/preflight checks and DNSMOS quality guardrails remain inside the selected audio workflows.
-
-This test-scope decision does not select, reject or change any catalog engineering method; that topic is unchanged and outside this update.
+Use [the submission checklist](docs/SUBMISSION_CHECKLIST.md). The grid's offline
+audio setup is not proof of performance on the final WebRTC transport.
 
 ## Catalog engineering methods
 
